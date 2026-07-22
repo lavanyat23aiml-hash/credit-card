@@ -47,6 +47,18 @@ The goal of CreditGuard is to analyze repayment behavior and develop a credit-ri
 
 ---
 
+## Dataset Information
+The project uses the **UCI Default of Credit Card Clients Dataset**:
+- **Dataset Dimensions:** 30,000 customer records and 25 columns
+- **Credit-Limit Information:** Amount of given credit (`LIMIT_BAL` in NT dollars)
+- **Demographic Variables:** Gender (`SEX`), Education level (`EDUCATION`), Marital status (`MARRIAGE`), and Age (`AGE`)
+- **Six Months of Repayment-Status History:** Past monthly payment status from April to September 2005 (`PAY_0` to `PAY_6`)
+- **Six Months of Bill-Statement Amounts:** Monthly bill statement balances from April to September 2005 (`BILL_AMT1` to `BILL_AMT6`)
+- **Six Months of Previous-Payment Amounts:** Amount paid each month from April to September 2005 (`PAY_AMT1` to `PAY_AMT6`)
+- **Binary Default Target:** Binary default indicator (`default_payment_next_month`), where `1` indicates default in October 2005 and `0` indicates timely repayment.
+
+---
+
 ## Planned Project Workflow
 ```
 Business Understanding
@@ -128,11 +140,11 @@ creditguard-credit-risk/
 
 ## Current Development Status
 - **Phase 1 Complete:** Project repository architecture, folder structure, environment configuration, dependency list, and base Streamlit setup initialized.
+- **Phase 2 Complete:** Dataset collection, dynamic header inspection, target column standardization (`default_payment_next_month`), inspection report generation, and data understanding notebook setup.
 
 ---
 
 ## Future Phases
-- **Phase 2:** Dataset collection, inspection, and cleaning
 - **Phase 3:** Exploratory data analysis (EDA)
 - **Phase 4:** SQL business analysis
 - **Phase 5:** Feature engineering and machine learning model development

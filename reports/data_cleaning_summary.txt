@@ -1,0 +1,100 @@
+=========================================================================
+          CREDITGUARD - PHASE 3 DATA CLEANING SUMMARY REPORT             
+=========================================================================
+
+--- 1. DATASET DIMENSIONS ---
+Original Raw Dataset Shape:    30,000 rows x 25 columns
+Cleaned Full Dataset Shape:    30,000 rows x 39 columns
+Model-Ready Dataset Shape:     30,000 rows x 33 columns
+
+--- 2. MISSING VALUES & DUPLICATES ---
+Missing Values Before Cleaning: 0
+Missing Values After Cleaning:  0
+Duplicate Rows Before Cleaning: 0
+Duplicate Rows After Cleaning:  0
+
+--- 3. CATEGORICAL CORRECTIONS PERFORMED ---
+- EDUCATION: Values 0 (14), 5 (280), and 6 (51) grouped into Category 4 ('Others').
+             Final EDUCATION Categories: 1=Graduate, 2=University, 3=High school, 4=Others.
+- MARRIAGE:  Value 0 (54) grouped into Category 3 ('Others').
+             Final MARRIAGE Categories: 1=Married, 2=Single, 3=Others.
+- Created readable label columns: 'sex_label', 'education_label', 'marriage_label'.
+
+--- 4. NUMERIC VALUE VALIDATION RESULTS ---
+- Customer IDs: 100% Unique (30,000 unique IDs).
+- Age Range: Valid (Min = 21, Max = 79).
+- Credit Limit: Valid (Min = $10,000, Max = $1,000,000).
+- Payment Amounts (pay_amt1..pay_amt6): All non-negative.
+- Target Variable (default_payment_next_month): Strictly binary {0, 1}.
+- Repayment Status (pay_0..pay_6): Preserved (-2 = No consumption, -1 = Paid in full, 0 = Revolving credit, 1-8 = Delayed months).
+- Negative Bill Amounts (bill_amt1..bill_amt6): Retained (represents credit balance or advance customer overpayment).
+
+--- 5. DERIVED ANALYTICAL COLUMNS CREATED ---
+  01. sex_label
+  02. education_label
+  03. marriage_label
+  04. age_group
+  05. credit_limit_group
+  06. average_bill_amount
+  07. average_payment_amount
+  08. total_bill_amount
+  09. total_payment_amount
+  10. payment_to_bill_ratio
+  11. maximum_delay_months
+  12. delayed_payment_count
+  13. has_payment_delay
+  14. credit_utilisation_ratio
+
+--- 6. TARGET CLASS DISTRIBUTION ---
+  Class 0 (Non-Defaulter): 23,364 (77.88%)
+  Class 1 (Defaulter):     6,636 (22.12%)
+
+--- 7. OUTPUT FILE PATHS ---
+  1. Cleaned Full Dataset:  data/processed/creditguard_cleaned.csv
+  2. Model-Ready Dataset:  data/processed/creditguard_model_ready.csv
+  3. Cleaning Report:       reports/data_cleaning_summary.txt
+
+--- 8. FINAL CLEANED DATASET COLUMN LISTING ---
+  01. id
+  02. limit_bal
+  03. sex
+  04. education
+  05. marriage
+  06. age
+  07. pay_0
+  08. pay_2
+  09. pay_3
+  10. pay_4
+  11. pay_5
+  12. pay_6
+  13. bill_amt1
+  14. bill_amt2
+  15. bill_amt3
+  16. bill_amt4
+  17. bill_amt5
+  18. bill_amt6
+  19. pay_amt1
+  20. pay_amt2
+  21. pay_amt3
+  22. pay_amt4
+  23. pay_amt5
+  24. pay_amt6
+  25. default_payment_next_month
+  26. sex_label
+  27. education_label
+  28. marriage_label
+  29. age_group
+  30. credit_limit_group
+  31. average_bill_amount
+  32. total_bill_amount
+  33. average_payment_amount
+  34. total_payment_amount
+  35. payment_to_bill_ratio
+  36. maximum_delay_months
+  37. delayed_payment_count
+  38. has_payment_delay
+  39. credit_utilisation_ratio
+
+=========================================================================
+                    END OF DATA CLEANING REPORT                          
+=========================================================================
