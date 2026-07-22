@@ -1,0 +1,13 @@
+pandas
+numpy
+matplotlib
+scikit-learn
+imbalanced-learn
+openpyxl
+xlrd
+jupyter
+streamlit
+joblib
+plotly
+sqlalchemy
+pytest
