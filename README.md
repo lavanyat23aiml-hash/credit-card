@@ -141,16 +141,17 @@ creditguard-credit-risk/
 ## Current Development Status
 - **Phase 1 Complete:** Project repository architecture, folder structure, environment configuration, dependency list, and base Streamlit setup initialized.
 - **Phase 2 Complete:** Dataset collection, dynamic header inspection, target column standardization (`default_payment_next_month`), inspection report generation, and data understanding notebook setup.
+- **Phase 3 Complete:** Data cleaning and feature engineering. Validated data integrity, applied categorical mapping, and engineered 14 new analytical features into `creditguard_cleaned.csv` and `creditguard_model_ready.csv`.
+- **Phase 4 Complete:** Exploratory data analysis (EDA). Generated 18+ high-quality visualisations, extracted dashboard-ready CSV metrics, identified highest risk customer segments, and documented business insights in reports.
+- **Phase 5 Complete:** SQL Business Analysis and Database Integration. Loaded the cleaned dataset into a SQLite database (`creditguard.db`). Created 35+ structured SQL queries and views to extract deep demographic, financial, and repayment insights. Exported 12 dashboard-ready CSV reports and generated automated SQL business reports.
 
 ---
 
 ## Future Phases
-- **Phase 3:** Exploratory data analysis (EDA)
-- **Phase 4:** SQL business analysis
-- **Phase 5:** Feature engineering and machine learning model development
-- **Phase 6:** Power BI dashboard creation
-- **Phase 7:** Streamlit application deployment
-- **Phase 8:** Testing, GitHub documentation, and final deployment
+- **Phase 6 Complete:** Feature engineering and machine learning model development. Trained cost-sensitive classification models (Logistic Regression, Random Forest) utilizing class-weighting and SMOTE to handle the imbalanced dataset. Selected the optimal classification threshold based on illustrative business costs. Saved production-ready `ImbPipeline` and threshold metadata.
+- **Phase 7 Complete (Preparation Phase):** Power BI Dashboard Preparation. Dynamically generated a standard Star Schema comprising a 30,000-row `FactCreditCustomer` table and 7 distinct `Dimension` tables. Provided comprehensive `DAX` code, power query steps, dashboard wireframes, and theme instructions. *Note: The final `.pbix` dashboard file is pending manual construction in Power BI Desktop by following the provided dashboard documentation.*
+- **Phase 8 Complete:** Streamlit Analytics Application Implementation. Built a highly robust, 7-page local Streamlit dashboard (`app.py`) which acts as the **primary interactive interface** for the project. Features include Portfolio Analytics, High-Risk Customer Explorer, interactive visual segmentation, and an ML-powered Customer Risk Prediction engine. Run locally via `streamlit run app.py`. Cloud deployment is currently pending.
+- **Phase 9 Complete:** Optional Power BI Support Package. An automated script generates a comprehensive manual-build package inside `dashboard/powerbi/`. This includes M scripts, DAX measures, Theme JSON, and Markdown blueprints. *Note: The Power BI deliverable is optional documentation; no `.pbix` file is generated or claimed, and the Streamlit app replaces it as the functional dashboard.*
 
 ---
 

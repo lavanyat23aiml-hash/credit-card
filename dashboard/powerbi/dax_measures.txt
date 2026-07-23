@@ -1,0 +1,51 @@
+Total Customers = DISTINCTCOUNT(FactCreditCustomer[id])
+
+Total Defaulters = CALCULATE([Total Customers], FactCreditCustomer[default_payment_next_month] = 1)
+
+Total Non-Defaulters = CALCULATE([Total Customers], FactCreditCustomer[default_payment_next_month] = 0)
+
+Overall Default Rate = DIVIDE([Total Defaulters], [Total Customers], 0)
+
+Average Credit Limit = AVERAGE(FactCreditCustomer[limit_bal])
+
+Customers With Payment Delay = CALCULATE([Total Customers], FactCreditCustomer[has_payment_delay] = 1)
+
+Payment Delay Rate = DIVIDE([Customers With Payment Delay], [Total Customers], 0)
+
+Average Bill Amount = AVERAGE(FactCreditCustomer[average_bill_amount])
+
+Average Payment Amount = AVERAGE(FactCreditCustomer[average_payment_amount])
+
+Average Credit Utilisation = AVERAGE(FactCreditCustomer[credit_utilisation_ratio])
+
+Average Payment-to-Bill Ratio = AVERAGE(FactCreditCustomer[payment_to_bill_ratio])
+
+Average Delayed-Payment Count = AVERAGE(FactCreditCustomer[delayed_payment_count])
+
+Average Maximum Delay = AVERAGE(FactCreditCustomer[maximum_delay_months])
+
+Selected Model Threshold = SELECTEDVALUE(ThresholdAnalysis[threshold], 0.5)
+
+Model Accuracy = SELECTEDVALUE(ModelPerformance[accuracy])
+
+Model Balanced Accuracy = SELECTEDVALUE(ModelPerformance[balanced_accuracy])
+
+Model Precision = SELECTEDVALUE(ModelPerformance[precision_class_1])
+
+Model Recall = SELECTEDVALUE(ModelPerformance[recall_class_1])
+
+Model F1 Score = SELECTEDVALUE(ModelPerformance[f1_class_1])
+
+Model ROC-AUC = SELECTEDVALUE(ModelPerformance[roc_auc])
+
+Model Average Precision = SELECTEDVALUE(ModelPerformance[average_precision])
+
+False Positives = SELECTEDVALUE(ModelPerformance[false_positives])
+
+False Negatives = SELECTEDVALUE(ModelPerformance[false_negatives])
+
+Illustrative Business Cost = SELECTEDVALUE(ModelPerformance[business_cost_illustrative])
+
+Total Defaulters by Segment = [Total Defaulters]
+
+Default Rate by Segment = [Overall Default Rate]

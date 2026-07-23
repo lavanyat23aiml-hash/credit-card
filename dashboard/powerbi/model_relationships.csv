@@ -1,0 +1,11 @@
+from_table,from_column,to_table,to_column,cardinality,cross_filter_direction,active,purpose
+DimSex,sex,FactCreditCustomer,sex,1:*,Single,Yes,Dimension filter
+DimEducation,education,FactCreditCustomer,education,1:*,Single,Yes,Dimension filter
+DimMarriage,marriage,FactCreditCustomer,marriage,1:*,Single,Yes,Dimension filter
+DimAgeGroup,age_group,FactCreditCustomer,age_group,1:*,Single,Yes,Dimension filter
+DimCreditLimitGroup,credit_limit_group,FactCreditCustomer,credit_limit_group,1:*,Single,Yes,Dimension filter
+DimDefaultStatus,default_payment_next_month,FactCreditCustomer,default_payment_next_month,1:*,Single,Yes,Dimension filter
+FactCreditCustomer,id,BillAmountMonthly,id,1:*,Single,Yes,Filter monthly bill trend by customer grain
+FactCreditCustomer,id,PayAmountMonthly,id,1:*,Single,Yes,Filter monthly payment trend by customer grain
+FactCreditCustomer,id,RepaymentHistoryUnpivoted,id,1:*,Single,Yes,Filter repayment history by customer grain
+DimRepaymentStatus,repayment_status,RepaymentHistoryUnpivoted,Repayment Status,1:*,Single,Yes,Filter unpivoted repayment codes

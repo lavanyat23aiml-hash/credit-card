@@ -1,0 +1,11 @@
+age_group,credit_limit_group,education_label,has_payment_delay,customer_count,defaulter_count,default_rate
+20-29,Low,University,1,979,450,45.97
+20-29,Medium,University,1,638,299,46.87
+30-39,Low,University,1,547,261,47.71
+30-39,Medium,University,1,534,239,44.76
+20-29,Low,Graduate school,1,432,208,48.15
+40-49,Low,University,1,367,203,55.31
+30-39,High,Graduate school,1,458,172,37.55
+20-29,Low,University,0,959,156,16.27
+30-39,High,University,1,424,152,35.85
+30-39,Very High,Graduate school,0,1522,151,9.92

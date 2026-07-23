@@ -1,0 +1,72 @@
+{
+  "name": "CreditGuard Theme",
+  "dataColors": [
+    "#2E5F9E",
+    "#E8871E",
+    "#C0392B",
+    "#2E8B57",
+    "#0B1F3A",
+    "#7F8C8D",
+    "#BDC3C7",
+    "#34495E"
+  ],
+  "background": "#F4F6F8",
+  "foreground": "#0B1F3A",
+  "tableAccent": "#2E5F9E",
+  "visualStyles": {
+    "*": {
+      "*": {
+        "title": [
+          {
+            "show": true,
+            "fontColor": { "solid": { "color": "#0B1F3A" } },
+            "fontSize": 12,
+            "fontFamily": "Segoe UI Semibold"
+          }
+        ],
+        "background": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#FFFFFF" } },
+            "transparency": 0
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": { "solid": { "color": "#F4F6F8" } },
+            "transparency": 0
+          }
+        ],
+        "outspace": [
+          {
+            "color": { "solid": { "color": "#E6E6E6" } },
+            "transparency": 0
+          }
+        ]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [
+          {
+            "color": { "solid": { "color": "#0B1F3A" } },
+            "fontSize": 24,
+            "fontFamily": "Segoe UI Semibold"
+          }
+        ],
+        "categoryAxis": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#7F8C8D" } },
+            "fontSize": 11,
+            "fontFamily": "Segoe UI"
+          }
+        ]
+      }
+    }
+  }
+}

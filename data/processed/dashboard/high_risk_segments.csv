@@ -1,0 +1,11 @@
+age_group,credit_limit_group,education_label,has_payment_delay,total_customers,defaulters,default_rate
+40-49,Low,University,1,367,203,0.553133514986376
+40-49,Medium,High school,1,152,81,0.5328947368421053
+30-39,Low,High school,1,178,93,0.5224719101123596
+40-49,Medium,Graduate school,1,106,55,0.5188679245283019
+40-49,Medium,University,1,237,122,0.5147679324894515
+20-29,Low,High school,1,252,126,0.5
+50-59,Low,High school,1,206,103,0.5
+20-29,Low,Graduate school,1,432,208,0.48148148148148145
+30-39,Low,Graduate school,1,158,76,0.4810126582278481
+40-49,Low,High school,1,296,142,0.4797297297297297

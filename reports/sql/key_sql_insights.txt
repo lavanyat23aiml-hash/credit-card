@@ -1,0 +1,12 @@
+Key SQL Business Insights
+
+1. Overall Portfolio Risk: The dataset contains 30000 total customers with 6636 defaulting, resulting in an overall default rate of 22.12%.
+2. Credit Limit Impact: The 'Low' credit limit group experiences a default rate of 31.79%, proving that initial credit screening is highly indicative of future risk.
+3. Repayment Consistency: Missing just one payment significantly spikes the default probability, while customers with 0 delayed payments show very low default risk.
+4. Top Defaulter Segment: The segment contributing the most absolute defaulters (450 people) is defined by Age: 20-29, Credit: Low, Education: University, and Delay Status: 1.
+5. Age Vulnerability: The 60+ demographic is the most vulnerable with a 33.33% default rate, requiring tailored risk assessments.
+6. Education as a Factor: Customers with High school backgrounds present the highest default rate (29.17%) across education brackets.
+7. Payment to Bill Discrepancy: On average, defaulters pay a significantly lower proportion of their outstanding bills (0.3221) compared to non-defaulters (0.5109).
+8. High Utilisation Risk: Queries revealed that high credit utilisation paired with a history of delays is a near-guarantee of default.
+9. Early Warning Indicator (PAY_0): The repayment status for the most recent month (PAY_0) is the single strongest univariate predictor of default.
+10. Compounding Demographics: Segments combining lower education, specific age brackets, and low credit limits generate the highest concentration of risk in the portfolio.

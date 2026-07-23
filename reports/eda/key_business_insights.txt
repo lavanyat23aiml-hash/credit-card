@@ -1,0 +1,12 @@
+Key Business Insights
+
+1. Overall Default Risk: 22.1% of the portfolio defaulted next month, representing a significant baseline risk.
+2. The First Missed Payment (PAY_0) is Critical: Customers with a recent delay (PAY_0=7) have a huge default rate of 77.8%. Immediate intervention here is crucial.
+3. Credit Limit as a Proxy for Risk: Customers in the Low bracket default at 31.8%, indicating strict initial screening reduces risk.
+4. Age Vulnerability: The 60+ group experiences the highest default rate (28.3%), suggesting a need for tailored financial products for this demographic.
+5. Education Factors: High school graduates show a default rate of 25.2%.
+6. Delayed Payment Accumulation: As delayed payment counts increase, default probability rises sharply. Maximum delays of 7 months result in 83.6% default rate.
+7. Payment to Bill Ratio: Defaulters tend to pay a significantly lower portion of their bills compared to non-defaulters.
+8. Gender Risk Profile: Male customers default at 24.2%, compared to a lower rate for others.
+9. Marriage Status Risk: Others individuals have a default rate of 23.6%.
+10. Compounded Risk Segment: The highest risk group (>100 customers) is "40-49", "Low", "University" with delays, reaching a massive 55.3% default probability.

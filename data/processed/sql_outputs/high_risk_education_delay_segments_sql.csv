@@ -1,0 +1,8 @@
+education_label,has_payment_delay,customer_count,default_rate
+High school,1,1866,45.28
+University,1,4897,44.48
+Graduate school,1,3230,39.35
+High school,0,3051,12.85
+University,0,9133,12.61
+Graduate school,0,7355,10.4
+Others,0,392,6.38

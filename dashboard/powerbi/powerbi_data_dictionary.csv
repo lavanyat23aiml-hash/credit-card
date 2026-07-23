@@ -1,0 +1,30 @@
+table_name,column_name,data_type,business_definition,role,suggested_format,source_file
+FactCreditCustomer,id,Whole Number,Unique customer identifier,Primary Key,Number,FactCreditCustomer.csv
+FactCreditCustomer,limit_bal,Decimal,Total given credit limit,Measure,Currency,FactCreditCustomer.csv
+FactCreditCustomer,age,Whole Number,Customer age in years,Measure,Number,FactCreditCustomer.csv
+FactCreditCustomer,age_group,Text,Categorised age bracket,Foreign Key,Text,FactCreditCustomer.csv
+FactCreditCustomer,credit_limit_group,Text,Categorised credit limit bracket,Foreign Key,Text,FactCreditCustomer.csv
+FactCreditCustomer,sex,Whole Number,Gender code (mapped to DimSex),Foreign Key,Number,FactCreditCustomer.csv
+FactCreditCustomer,education,Whole Number,Education code (mapped to DimEducation),Foreign Key,Number,FactCreditCustomer.csv
+FactCreditCustomer,marriage,Whole Number,Marriage code (mapped to DimMarriage),Foreign Key,Number,FactCreditCustomer.csv
+FactCreditCustomer,default_payment_next_month,Whole Number,1 if defaulted next month else 0,Foreign Key,Number,FactCreditCustomer.csv
+FactCreditCustomer,credit_utilisation_ratio,Decimal,Average utilization of limit,Measure,Percentage,FactCreditCustomer.csv
+FactCreditCustomer,payment_to_bill_ratio,Decimal,Ratio of payments made vs bills owed,Measure,Percentage,FactCreditCustomer.csv
+FactCreditCustomer,delayed_payment_count,Whole Number,Total number of months payment was delayed,Measure,Number,FactCreditCustomer.csv
+FactCreditCustomer,maximum_delay_months,Whole Number,Maximum delay length over 6 months,Measure,Number,FactCreditCustomer.csv
+DimAgeGroup,age_group,Text,Age bracket label,Primary Key,Text,DimAgeGroup.csv
+DimCreditLimitGroup,credit_limit_group,Text,Credit Limit bracket label,Primary Key,Text,DimCreditLimitGroup.csv
+DimSex,sex,Whole Number,Gender Code,Primary Key,Number,DimSex.csv
+DimSex,sex_label,Text,Gender description (Male/Female),Dimension,Text,DimSex.csv
+DimEducation,education,Whole Number,Education Code,Primary Key,Number,DimEducation.csv
+DimEducation,education_label,Text,Education description,Dimension,Text,DimEducation.csv
+DimMarriage,marriage,Whole Number,Marriage Code,Primary Key,Number,DimMarriage.csv
+DimMarriage,marriage_label,Text,Marriage description,Dimension,Text,DimMarriage.csv
+DimDefaultStatus,default_payment_next_month,Whole Number,Target code,Primary Key,Number,DimDefaultStatus.csv
+DimDefaultStatus,default_label,Text,Target description (Defaulter/Reliable),Dimension,Text,DimDefaultStatus.csv
+ModelPerformance,Model,Text,Name of machine learning model,Dimension,Text,ModelPerformance.csv
+ModelPerformance,F1_Class1,Decimal,F1 Score for defaulter class,Measure,Decimal,ModelPerformance.csv
+ThresholdAnalysis,Threshold,Decimal,Probability decision threshold,Dimension,Decimal,ThresholdAnalysis.csv
+ThresholdAnalysis,Total_Business_Cost,Decimal,Simulated business cost penalty,Measure,Number,ThresholdAnalysis.csv
+FeatureImportance,Feature,Text,Model feature name,Dimension,Text,FeatureImportance.csv
+FeatureImportance,Importance,Decimal,Relative Gini importance,Measure,Decimal,FeatureImportance.csv
