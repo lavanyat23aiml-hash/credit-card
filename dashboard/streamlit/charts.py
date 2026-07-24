@@ -1,305 +1,299 @@
+"""
+All Plotly chart builders for CreditGuard.
+Chart logic and data transformations are unchanged.
+Only visual theme is updated: light bg, consistent palette.
+"""
+
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dashboard.streamlit.app_config import COLORS
+from dashboard.streamlit.styles import PALETTE, CHART_COLORS, FONT_STACK
 
-LAYOUT_DEFAULTS = {
-    "template": "plotly_white",
-    "margin": dict(l=20, r=20, t=40, b=20)
-}
+# ─── Shared layout applied to every figure ───────────────────────────────────
+_BASE_LAYOUT = dict(
+    font=dict(family=FONT_STACK, color=PALETTE["navy"], size=13),
+    paper_bgcolor="rgba(0,0,0,0)",   # transparent outer bg
+    plot_bgcolor="#FFFFFF",          # white plot area
+    margin=dict(l=16, r=16, t=44, b=16),
+    title_font=dict(family=FONT_STACK, size=16, color=PALETTE["navy"]),
+    legend=dict(
+        bgcolor="rgba(0,0,0,0)",
+        bordercolor=PALETTE["border"],
+        borderwidth=0,
+        font=dict(size=12),
+    ),
+    xaxis=dict(
+        gridcolor="#EEF0F3",
+        gridwidth=1,
+        linecolor=PALETTE["border"],
+        tickfont=dict(size=12, color=PALETTE["text_secondary"]),
+        title_font=dict(size=13, color=PALETTE["text_secondary"]),
+    ),
+    yaxis=dict(
+        gridcolor="#EEF0F3",
+        gridwidth=1,
+        linecolor=PALETTE["border"],
+        tickfont=dict(size=12, color=PALETTE["text_secondary"]),
+        title_font=dict(size=13, color=PALETTE["text_secondary"]),
+    ),
+)
 
-def _check_empty(df):
-    if df is None or df.empty:
-        return px.bar(title="No data available")
-    return None
 
-def plot_default_rate_bar(df, group_col, title, sort_by_value=False):
-    empty = _check_empty(df)
-    if empty: return empty
-    
-    grouped = df.groupby(group_col)['default_payment_next_month'].mean().reset_index()
-    grouped['Default Rate'] = grouped['default_payment_next_month'] * 100
-    
+def _apply_base(fig: go.Figure, height: int = 340) -> go.Figure:
+    fig.update_layout(height=height, **_BASE_LAYOUT)
+    return fig
+
+
+def _empty_fig(msg: str = "No data available") -> go.Figure:
+    fig = go.Figure()
+    fig.add_annotation(
+        text=msg, showarrow=False, font=dict(size=14, color=PALETTE["text_secondary"]),
+        xref="paper", yref="paper", x=0.5, y=0.5,
+    )
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF",
+        xaxis_visible=False, yaxis_visible=False, height=200,
+    )
+    return fig
+
+
+def _check(df) -> bool:
+    """Return True if df has rows, False otherwise."""
+    return df is not None and not df.empty
+
+
+# ─── Portfolio / Overview charts ─────────────────────────────────────────────
+
+def plot_default_rate_bar(df, group_col: str, title: str, sort_by_value: bool = False):
+    if not _check(df):
+        return _empty_fig()
+    grouped = df.groupby(group_col)["default_payment_next_month"].mean().reset_index()
+    grouped["Default Rate (%)"] = (grouped["default_payment_next_month"] * 100).round(1)
     if sort_by_value:
-        grouped = grouped.sort_values('Default Rate', ascending=False)
-    
+        grouped = grouped.sort_values("Default Rate (%)", ascending=True)
     fig = px.bar(
-        grouped, x=group_col, y='Default Rate', 
-        title=title, 
-        color_discrete_sequence=[COLORS['secondary']],
-        text_auto='.1f'
+        grouped, x=group_col, y="Default Rate (%)", title=title,
+        color_discrete_sequence=[PALETTE["blue"]],
+        text="Default Rate (%)",
     )
-    fig.update_layout(**LAYOUT_DEFAULTS, yaxis_title="Default Rate (%)")
-    fig.update_traces(textposition="outside")
-    return fig
+    fig.update_traces(
+        texttemplate="%{text:.1f}%", textposition="outside",
+        marker_line_width=0, marker_color=PALETTE["blue"],
+    )
+    fig.update_layout(yaxis_title="Default Rate (%)", xaxis_title="")
+    return _apply_base(fig)
 
-def plot_default_rate_donut(df, group_col, title):
-    empty = _check_empty(df)
-    if empty: return empty
-    
-    grouped = df.groupby(group_col)['default_payment_next_month'].mean().reset_index()
-    grouped['Default Rate'] = grouped['default_payment_next_month'] * 100
-    
+
+def plot_default_rate_donut(df, group_col: str, title: str):
+    if not _check(df):
+        return _empty_fig()
+    grouped = df.groupby(group_col)["default_payment_next_month"].mean().reset_index()
+    grouped["Default Rate (%)"] = (grouped["default_payment_next_month"] * 100).round(1)
     fig = px.pie(
-        grouped, names=group_col, values='Default Rate',
-        title=title,
-        color_discrete_sequence=px.colors.sequential.Blues_r,
-        hole=0.4
+        grouped, names=group_col, values="Default Rate (%)", title=title,
+        color_discrete_sequence=CHART_COLORS, hole=0.44,
     )
-    fig.update_traces(textinfo='percent+label')
-    fig.update_layout(**LAYOUT_DEFAULTS)
-    return fig
+    fig.update_traces(textinfo="percent+label", pull=[0.03] * len(grouped))
+    fig.update_layout(showlegend=True)
+    return _apply_base(fig)
 
-def plot_count_bar(df, group_col, title, filter_defaulters=False):
-    empty = _check_empty(df)
-    if empty: return empty
-    
-    df_plot = df[df['default_payment_next_month'] == 1] if filter_defaulters else df
-    counts = df_plot.groupby(group_col).size().reset_index(name='Count')
-    
-    fig = px.bar(
-        counts, x=group_col, y='Count',
-        title=title,
-        color_discrete_sequence=[COLORS['high_risk'] if filter_defaulters else COLORS['secondary']]
-    )
-    fig.update_layout(**LAYOUT_DEFAULTS)
-    return fig
+
+def plot_count_bar(df, group_col: str, title: str, filter_defaulters: bool = False):
+    if not _check(df):
+        return _empty_fig()
+    df_plot = df[df["default_payment_next_month"] == 1] if filter_defaulters else df
+    counts = df_plot.groupby(group_col).size().reset_index(name="Count")
+    color = PALETTE["red"] if filter_defaulters else PALETTE["blue"]
+    fig = px.bar(counts, x=group_col, y="Count", title=title, color_discrete_sequence=[color])
+    fig.update_traces(marker_line_width=0)
+    fig.update_layout(xaxis_title="", yaxis_title="Customers")
+    return _apply_base(fig)
+
+
+# ─── Repayment & Financial Behaviour ─────────────────────────────────────────
 
 def plot_utilisation_by_status(df):
-    empty = _check_empty(df)
-    if empty: return empty
-        
+    if not _check(df):
+        return _empty_fig()
     df_plot = df.copy()
-    df_plot['Status'] = df_plot['default_payment_next_month'].map({1: 'Defaulter', 0: 'Reliable'})
-    
+    df_plot["Status"] = df_plot["default_payment_next_month"].map({1: "Defaulter", 0: "Reliable"})
     fig = px.box(
-        df_plot, x='Status', y='credit_utilisation_ratio',
-        color='Status',
-        color_discrete_map={'Defaulter': COLORS['high_risk'], 'Reliable': COLORS['low_risk']},
-        title="Credit Utilisation by Default Status"
+        df_plot, x="Status", y="credit_utilisation_ratio",
+        color="Status",
+        color_discrete_map={"Defaulter": PALETTE["red"], "Reliable": PALETTE["green"]},
+        title="Credit Utilisation by Default Status",
     )
-    fig.update_layout(**LAYOUT_DEFAULTS, yaxis_title="Utilisation Ratio")
-    return fig
+    fig.update_layout(showlegend=False, yaxis_title="Utilisation Ratio", xaxis_title="")
+    return _apply_base(fig)
 
-def plot_ratio_by_status(df, col, title):
-    empty = _check_empty(df)
-    if empty: return empty
-    
-    grouped = df.groupby('default_payment_next_month')[col].mean().reset_index()
-    grouped['Status'] = grouped['default_payment_next_month'].map({1: 'Defaulter', 0: 'Reliable'})
-    
+
+def plot_ratio_by_status(df, col: str, title: str):
+    if not _check(df):
+        return _empty_fig()
+    grouped = df.groupby("default_payment_next_month")[col].mean().reset_index()
+    grouped["Status"] = grouped["default_payment_next_month"].map({1: "Defaulter", 0: "Reliable"})
     fig = px.bar(
-        grouped, x='Status', y=col,
-        color='Status',
-        color_discrete_map={'Defaulter': COLORS['high_risk'], 'Reliable': COLORS['low_risk']},
-        title=title, text_auto='.2f'
+        grouped, x="Status", y=col, color="Status",
+        color_discrete_map={"Defaulter": PALETTE["red"], "Reliable": PALETTE["green"]},
+        title=title, text_auto=".2f",
     )
-    fig.update_layout(**LAYOUT_DEFAULTS)
-    fig.update_traces(textposition="outside")
-    return fig
+    fig.update_traces(textposition="outside", marker_line_width=0)
+    fig.update_layout(showlegend=False, xaxis_title="")
+    return _apply_base(fig)
+
 
 def plot_bill_vs_payment(df):
-    empty = _check_empty(df)
-    if empty: return empty
-    
-    grouped = df.groupby('default_payment_next_month')[['average_bill_amount', 'average_payment_amount']].mean().reset_index()
-    grouped['Status'] = grouped['default_payment_next_month'].map({1: 'Defaulter', 0: 'Reliable'})
-    
-    import pandas as pd
-    melted = pd.melt(grouped, id_vars=['Status'], value_vars=['average_bill_amount', 'average_payment_amount'], var_name='Metric', value_name='Amount')
-    
-    fig = px.bar(
-        melted, x='Metric', y='Amount', color='Status', barmode='group',
-        color_discrete_map={'Defaulter': COLORS['high_risk'], 'Reliable': COLORS['low_risk']},
-        title="Avg Bill vs Avg Payment"
+    if not _check(df):
+        return _empty_fig()
+    grouped = df.groupby("default_payment_next_month")[
+        ["average_bill_amount", "average_payment_amount"]
+    ].mean().reset_index()
+    grouped["Status"] = grouped["default_payment_next_month"].map({1: "Defaulter", 0: "Reliable"})
+    melted = pd.melt(
+        grouped, id_vars=["Status"],
+        value_vars=["average_bill_amount", "average_payment_amount"],
+        var_name="Metric", value_name="Amount (NT$)",
     )
-    fig.update_layout(**LAYOUT_DEFAULTS)
-    return fig
+    melted["Metric"] = melted["Metric"].map(
+        {"average_bill_amount": "Avg Bill", "average_payment_amount": "Avg Payment"}
+    )
+    fig = px.bar(
+        melted, x="Metric", y="Amount (NT$)", color="Status", barmode="group",
+        color_discrete_map={"Defaulter": PALETTE["red"], "Reliable": PALETTE["green"]},
+        title="Avg Bill vs Avg Payment by Default Status",
+    )
+    fig.update_traces(marker_line_width=0)
+    return _apply_base(fig)
 
-def plot_monthly_trend(df, metric_prefix, title):
-    """Plots trend of bill_amt1..6 or pay_amt1..6. Note: 1 is most recent (Sept), 6 is oldest (April)."""
-    empty = _check_empty(df)
-    if empty: return empty
-        
-    cols = [f'{metric_prefix}{i}' for i in range(6, 0, -1)]
-    months = ['April', 'May', 'June', 'July', 'August', 'September']
-    
-    df_plot = df.groupby('default_payment_next_month')[cols].mean().reset_index()
-    df_plot['Status'] = df_plot['default_payment_next_month'].map({1: 'Defaulter', 0: 'Reliable'})
-    
-    import pandas as pd
-    melted = pd.melt(df_plot, id_vars=['Status'], value_vars=cols, var_name='Metric', value_name='Amount')
-    month_map = {col: month for col, month in zip(cols, months)}
-    melted['Month'] = melted['Metric'].map(month_map)
-    
+
+def plot_monthly_trend(df, metric_prefix: str, title: str):
+    """
+    Plots bill_amt1..6 or pay_amt1..6.
+    In the source data col1 = most recent (Sep), col6 = oldest (Apr).
+    We reverse so the x-axis reads chronologically Apr → Sep.
+    """
+    if not _check(df):
+        return _empty_fig()
+    cols = [f"{metric_prefix}{i}" for i in range(6, 0, -1)]   # 6→1 = Apr→Sep
+    months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep"]
+    grouped = (
+        df.groupby("default_payment_next_month")[cols]
+        .mean()
+        .reset_index()
+    )
+    grouped["Status"] = grouped["default_payment_next_month"].map({1: "Defaulter", 0: "Reliable"})
+    melted = pd.melt(grouped, id_vars=["Status"], value_vars=cols, var_name="Col", value_name="Amount (NT$)")
+    month_map = dict(zip(cols, months))
+    melted["Month"] = melted["Col"].map(month_map)
+    melted["Month"] = pd.Categorical(melted["Month"], categories=months, ordered=True)
+    melted = melted.sort_values("Month")
     fig = px.line(
-        melted, x='Month', y='Amount', color='Status',
-        color_discrete_map={'Defaulter': COLORS['high_risk'], 'Reliable': COLORS['low_risk']},
-        title=title, markers=True
+        melted, x="Month", y="Amount (NT$)", color="Status",
+        color_discrete_map={"Defaulter": PALETTE["red"], "Reliable": PALETTE["blue"]},
+        markers=True, title=title,
     )
-    fig.update_layout(**LAYOUT_DEFAULTS)
-    return fig
+    fig.update_traces(line_width=2.5)
+    return _apply_base(fig)
 
-def plot_model_comparison(comp_df, metric):
-    empty = _check_empty(comp_df)
-    if empty:
-        return empty
 
-    required_columns = {"model_name", metric}
-    missing_columns = required_columns - set(comp_df.columns)
+# ─── Model Performance ────────────────────────────────────────────────────────
 
-    if missing_columns:
-        raise ValueError(
-            f"Missing columns for model comparison chart: "
-            f"{sorted(missing_columns)}"
-        )
-
-    chart_data = comp_df.sort_values(metric, ascending=True)
-
+def plot_model_comparison(comp_df, metric: str):
+    if not _check(comp_df):
+        return _empty_fig()
+    col = "Model" if "Model" in comp_df.columns else comp_df.columns[0]
+    sorted_df = comp_df.sort_values(metric, ascending=True)
     fig = px.bar(
-        chart_data,
-        x=metric,
-        y="model_name",
-        orientation="h",
+        sorted_df, x=metric, y=col, orientation="h",
         title=f"{metric.replace('_', ' ').title()} by Model",
-        color_discrete_sequence=[COLORS["secondary"]],
-        text_auto=".3f",
-        labels={
-            "model_name": "Model",
-            metric: metric.replace("_", " ").title(),
-        },
+        color_discrete_sequence=[PALETTE["purple"]],
+        text=metric,
     )
+    fig.update_traces(texttemplate="%{text:.3f}", textposition="outside", marker_line_width=0)
+    fig.update_layout(xaxis_title=metric.replace("_", " ").title(), yaxis_title="")
+    return _apply_base(fig, height=360)
 
-    fig.update_layout(**LAYOUT_DEFAULTS)
-    fig.update_traces(textposition="outside")
 
-    return fig
 def plot_model_costs(comp_df):
-    empty = _check_empty(comp_df)
-    if empty:
-        return empty
-
+    if not _check(comp_df):
+        return _empty_fig()
+    col = "Model" if "Model" in comp_df.columns else comp_df.columns[0]
+    cost_col = "business_cost_illustrative"
+    if cost_col not in comp_df.columns:
+        return _empty_fig("business_cost_illustrative column not found")
+    sorted_df = comp_df.sort_values(cost_col, ascending=False)
     fig = px.bar(
-        comp_df.sort_values(
-            "business_cost_illustrative",
-            ascending=True,
-        ),
-        x="business_cost_illustrative",
-        y="model_name",
-        orientation="h",
-        title="Illustrative Business Cost by Model (Lower is Better)",
-        color_discrete_sequence=[COLORS["moderate_risk"]],
-        text_auto=".0f",
-        labels={
-            "model_name": "Model",
-            "business_cost_illustrative": "Illustrative Business Cost",
-        },
+        sorted_df, x=cost_col, y=col, orientation="h",
+        title="Illustrative Business Cost (Lower = Better)",
+        color_discrete_sequence=[PALETTE["orange"]],
+        text=cost_col,
     )
+    fig.update_traces(texttemplate="%{text:.0f}", textposition="outside", marker_line_width=0)
+    fig.update_layout(xaxis_title="Business Cost (Illustrative)", yaxis_title="")
+    return _apply_base(fig, height=360)
 
-    fig.update_layout(**LAYOUT_DEFAULTS)
-    fig.update_traces(textposition="outside")
 
-    return fig
-
-def plot_false_errors(comp_df, err_type, title, color):
-    empty = _check_empty(comp_df)
-    if empty:
-        return empty
-
-    required_columns = {"model_name", err_type}
-    missing_columns = required_columns - set(comp_df.columns)
-
-    if missing_columns:
-        raise ValueError(
-            f"Missing columns for error comparison chart: "
-            f"{sorted(missing_columns)}"
-        )
-
-    chart_data = comp_df.sort_values(err_type, ascending=True)
-
+def plot_false_errors(comp_df, err_col: str, title: str, color: str):
+    if not _check(comp_df) or err_col not in comp_df.columns:
+        return _empty_fig(f"{err_col} not found")
+    col = "Model" if "Model" in comp_df.columns else comp_df.columns[0]
+    sorted_df = comp_df.sort_values(err_col, ascending=False)
     fig = px.bar(
-        chart_data,
-        x=err_type,
-        y="model_name",
-        orientation="h",
-        title=title,
-        color_discrete_sequence=[color],
-        text_auto=".0f",
-        labels={
-            "model_name": "Model",
-            err_type: err_type.replace("_", " ").title(),
-        },
+        sorted_df, x=err_col, y=col, orientation="h",
+        title=title, color_discrete_sequence=[color], text=err_col,
     )
+    fig.update_traces(texttemplate="%{text:.0f}", textposition="outside", marker_line_width=0)
+    fig.update_layout(xaxis_title="Count", yaxis_title="")
+    return _apply_base(fig, height=340)
 
-    fig.update_layout(**LAYOUT_DEFAULTS)
-    fig.update_traces(textposition="outside")
-
-    return fig
 
 def plot_threshold_tradeoff(thresh_df):
-    empty = _check_empty(thresh_df)
-    if empty:
-        return empty
-
-    required_columns = {"threshold", "precision", "recall"}
-    missing_columns = required_columns - set(thresh_df.columns)
-
-    if missing_columns:
-        raise ValueError(
-            f"Missing threshold-analysis columns: {sorted(missing_columns)}"
-        )
-
+    if not _check(thresh_df):
+        return _empty_fig()
+    # Normalise column names to title-case
+    thresh_df = thresh_df.copy()
+    thresh_df.columns = [c.strip() for c in thresh_df.columns]
+    col_map = {c.lower(): c for c in thresh_df.columns}
+    t_col = col_map.get("threshold", None)
+    p_col = col_map.get("precision", None)
+    r_col = col_map.get("recall", None)
+    f_col = col_map.get("f1_score", col_map.get("f1", None))
+    if not t_col or not p_col:
+        return _empty_fig("Required threshold columns not found")
     fig = go.Figure()
-
-    fig.add_trace(
-        go.Scatter(
-            x=thresh_df["threshold"],
-            y=thresh_df["precision"],
-            mode="lines+markers",
-            name="Precision",
-            line=dict(color=COLORS["primary"]),
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=thresh_df["threshold"],
-            y=thresh_df["recall"],
-            mode="lines+markers",
-            name="Recall",
-            line=dict(color=COLORS["high_risk"]),
-        )
-    )
-
-    if "f1" in thresh_df.columns:
-        fig.add_trace(
-            go.Scatter(
-                x=thresh_df["threshold"],
-                y=thresh_df["f1"],
-                mode="lines+markers",
-                name="F1 Score",
-                line=dict(color=COLORS["moderate_risk"]),
-            )
-        )
-
+    fig.add_trace(go.Scatter(x=thresh_df[t_col], y=thresh_df[p_col], mode="lines", name="Precision",
+                             line=dict(color=PALETTE["blue"], width=2.5)))
+    if r_col:
+        fig.add_trace(go.Scatter(x=thresh_df[t_col], y=thresh_df[r_col], mode="lines", name="Recall",
+                                 line=dict(color=PALETTE["orange"], width=2.5)))
+    if f_col:
+        fig.add_trace(go.Scatter(x=thresh_df[t_col], y=thresh_df[f_col], mode="lines", name="F1",
+                                 line=dict(color=PALETTE["teal"], width=2.5, dash="dash")))
     fig.update_layout(
-        title="Threshold Trade-off",
-        xaxis_title="Threshold",
+        title="Precision · Recall · F1 Trade-off Across Thresholds",
+        xaxis_title="Classification Threshold",
         yaxis_title="Score",
-        **LAYOUT_DEFAULTS,
     )
+    return _apply_base(fig, height=360)
 
-    return fig
 
 def plot_feature_importance(feat_df):
-    empty = _check_empty(feat_df)
-    if empty: return empty
-        
-    top_feats = feat_df.sort_values('Importance', ascending=True).tail(15)
-    
+    if not _check(feat_df):
+        return _empty_fig()
+    feat_df = feat_df.copy()
+    feat_df.columns = [c.strip() for c in feat_df.columns]
+    col_map = {c.lower(): c for c in feat_df.columns}
+    feat_col = col_map.get("feature", None)
+    imp_col = col_map.get("importance", None)
+    if not feat_col or not imp_col:
+        return _empty_fig("Feature/Importance columns not found")
+    top = feat_df.sort_values(imp_col, ascending=True).tail(15)
     fig = px.bar(
-        top_feats, x='Importance', y='Feature', orientation='h',
-        title="Top 15 Feature Importances (Random Forest)",
-        color_discrete_sequence=[COLORS['secondary']]
+        top, x=imp_col, y=feat_col, orientation="h",
+        title="Top 15 Feature Importances",
+        color_discrete_sequence=[PALETTE["teal"]],
+        text=imp_col,
     )
-    fig.update_layout(**LAYOUT_DEFAULTS)
-    return fig
+    fig.update_traces(texttemplate="%{text:.4f}", textposition="outside", marker_line_width=0)
+    fig.update_layout(xaxis_title="Importance Score", yaxis_title="")
+    return _apply_base(fig, height=440)

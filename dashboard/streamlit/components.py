@@ -1,100 +1,87 @@
+"""
+Reusable UI component helpers for CreditGuard.
+Provides table styling, CSV export, and disclaimer rendering.
+All styling references the centralized PALETTE in styles.py.
+"""
+
 import streamlit as st
 import pandas as pd
+from dashboard.streamlit.styles import PALETTE, FONT_STACK
 
-def render_kpi_card(title, value, help_text=None):
-    """Renders a simple metric card."""
-    st.metric(label=title, value=value, help=help_text)
+
+# --- Disclaimer --------------------------------------------------------------
 
 def render_disclaimer():
-    """Renders the educational disclaimer."""
+    """Renders the standard educational disclaimer."""
     st.info(
-        "**Educational Disclaimer:** This application is built for educational and portfolio demonstration "
-        "purposes only. It is not connected to a real financial institution, and the predictions "
-        "should not be used for actual lending decisions."
+        "**Educational Disclaimer:** This application is built for educational and portfolio "
+        "demonstration purposes only. It is not connected to a real financial institution, "
+        "and predictions must not be used for actual lending decisions."
     )
 
-def highlight_defaulters(val):
-    """Pandas styler function to highlight actual defaulters."""
-    if str(val) == "1" or str(val).lower() == "defaulter":
-        return "background-color: rgba(192, 57, 43, 0.2); color: #C0392B; font-weight: bold;"
-    elif str(val) == "0" or str(val).lower() == "reliable":
-        return "background-color: rgba(46, 139, 87, 0.2); color: #2E8B57;"
+
+# --- Segment Table ------------------------------------------------------------
+
+def _style_risk_row(row):
+    """Row-level pandas styler  applies background based on default_rate."""
+    rate = row.get("default_rate", 0)
+    if rate >= 30:
+        bg = PALETTE["soft_red"]
+    elif rate >= 15:
+        bg = PALETTE["soft_orange"]
+    else:
+        bg = PALETTE["soft_green"]
+    return [f"background-color: {bg}" for _ in row]
+
+
+def render_segment_table(df: pd.DataFrame):
+    """Renders the high-risk segment table with conditional row colors."""
+    if df is None or df.empty:
+        st.warning("No segments found for the selected filters.")
+        return
+
+    display = df.copy()
+    if "default_rate" in display.columns:
+        display["default_rate"] = display["default_rate"].round(1)
+
+    styled = display.style.apply(_style_risk_row, axis=1)
+    st.dataframe(styled, width="stretch", hide_index=True)
+
+
+# --- Explorer Table -----------------------------------------------------------
+
+def _highlight_default_col(val):
+    """Cell-level styler for default_payment_next_month column."""
+    if val == 1:
+        return f"background-color: {PALETTE['soft_red']}; color: {PALETTE['red']}; font-weight:600;"
+    elif val == 0:
+        return f"background-color: {PALETTE['soft_green']}; color: {PALETTE['green']}; font-weight:600;"
     return ""
 
-def render_segment_table(df):
-    """Renders the high risk segment table with styling."""
-    if df.empty:
-        st.warning("No segments available with current filters.")
+
+def render_explorer_table(df: pd.DataFrame):
+    """Renders the customer explorer table with default-status highlighting."""
+    if df is None or df.empty:
+        st.warning("No customers found matching the current search or filters.")
         return
-        
-    st.dataframe(
-        df.style.map(highlight_defaulters, subset=['default_rate', 'defaulter_count']),
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "default_rate": st.column_config.ProgressColumn(
-                "Default Rate",
-                help="Percentage of defaults in this segment",
-                format="%.1f%%",
-                min_value=0,
-                max_value=100,
-            ),
-        }
-    )
 
-def render_explorer_table(df):
-    """Renders the explorer table with conditional row highlighting for defaulters."""
-    if df.empty:
-        st.warning("No customers found matching the search or filters.")
-        return
-    
-    st.dataframe(
-        df.style.map(highlight_defaulters, subset=['default_payment_next_month']),
-        use_container_width=True,
-        hide_index=True
-    )
+    display = df.copy()
+    target_col = "default_payment_next_month"
 
-def download_csv_button(df, filename="export.csv", button_text="Download as CSV"):
-    """Renders a download button for a DataFrame."""
-    if not df.empty:
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label=button_text,
-            data=csv,
-            file_name=filename,
-            mime='text/csv',
-        )
-
-def display_prediction_result(prob, predicted_class, threshold, risk_category):
-    """Displays the predicted risk results with appropriate coloring."""
-    st.subheader("Prediction Result")
-    
-    # Map risk category to color
-    if risk_category == "Low Risk":
-        color = "green"
-    elif risk_category == "Moderate Risk":
-        color = "orange"
+    if target_col in display.columns:
+        styled = display.style.map(_highlight_default_col, subset=[target_col])
     else:
-        color = "red"
-        
-    st.markdown(f"### Estimated Default Probability: **:{color}[{prob:.1%}]**")
-    
-    st.progress(prob)
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Predicted Class", "Defaulter" if predicted_class == 1 else "Reliable")
-    with col2:
-        st.metric("Risk Category", risk_category)
-    with col3:
-        st.metric("Model Threshold", f"{threshold:.3f}")
-        
-    # Generate cautious explanation
-    st.markdown("#### Explanation of Risk Factors")
-    st.markdown(
-        "Note: The model's prediction is an association based on historical patterns, not a guaranteed "
-        "causal outcome. High predicted risk is typically associated with:"
-    )
-    st.markdown("- Recent or frequent delayed payments.")
-    st.markdown("- High credit limit utilisation.")
-    st.markdown("- Large bill amounts relative to payment amounts.")
+        styled = display.style
+
+    st.dataframe(styled, width="stretch", hide_index=True)
+
+
+# --- CSV Download Button ------------------------------------------------------
+
+def download_csv_button(df: pd.DataFrame, filename: str = "export.csv", label: str = "? Download as CSV"):
+    """Renders a styled download button for a DataFrame."""
+    if df is None or df.empty:
+        return
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
+    st.download_button(label=label, data=csv_bytes, file_name=filename, mime="text/csv")
+
