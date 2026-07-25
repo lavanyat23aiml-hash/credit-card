@@ -169,6 +169,15 @@ Before running the application locally, you must configure your `.streamlit/secr
    Paste the generated hash into the corresponding `password_hash` field in `.streamlit/secrets.toml`.
    *Note: Never commit `secrets.toml` to version control.*
 
+## Data Upload & Validation
+CreditGuard includes a robust **Data Upload & Validation** module, allowing analysts to upload custom datasets in CSV or Excel format.
+- **Privacy and Security**: Uploaded files are processed strictly in-memory during the active Streamlit session. Customer data is never written to disk, logged, or pushed to GitHub.
+- **Validation Rules**: The application normalizes column names and strictly validates required model features (e.g., `limit_bal`, `pay_0`, `bill_amt1`). Missing values, duplicates, and out-of-range numeric fields are detected and reported.
+- **Graceful Degradation**: If the uploaded dataset lacks the target column (`default_payment_next_month`), the file is marked as "Prediction Only". Dashboards gracefully degrade, hiding supervised metrics without crashing.
+- **Derived Features**: The module automatically applies CreditGuard's preprocessing logic to calculate 14 derived behavioral and demographic features for real-time analytics.
+
+To test this feature, download the `sample_upload_template.csv` from the Data Upload page.
+
 ## Streamlit Cloud Deployment
 To deploy the application with authentication on Streamlit Community Cloud:
 1. Open your deployed app settings on Streamlit Cloud.

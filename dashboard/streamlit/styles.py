@@ -517,3 +517,60 @@ def render_user_profile_sidebar(name: str, role: str):
     </div>
     """
     st.sidebar.markdown(html, unsafe_allow_html=True)
+def render_status_card(status: str):
+    """Renders a colored status card for validation."""
+    if status == "Ready for Analytics and Prediction":
+        bg, color, icon = PALETTE["soft_green"], PALETTE["green"], "✅"
+    elif status == "Ready for Prediction Only":
+        bg, color, icon = PALETTE["soft_teal"], PALETTE["teal"], "ℹ️"
+    elif status == "Needs Correction":
+        bg, color, icon = PALETTE["soft_orange"], PALETTE["orange"], "⚠️"
+    else:
+        bg, color, icon = PALETTE["soft_red"], PALETTE["red"], "❌"
+        
+    html = f"""
+    <div style="
+        background:{bg};
+        border:1px solid {color};
+        border-radius:12px;
+        padding:20px;
+        margin-bottom:20px;
+        display:flex;
+        align-items:center;
+        gap:15px;
+    ">
+        <div style="font-size:32px;">{icon}</div>
+        <div>
+            <div style="font-size:18px; font-weight:700; color:{color};">Status: {status}</div>
+        </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+def render_data_source_badge(filename: str = None):
+    """Renders the data source indicator in the sidebar."""
+    if filename:
+        text = f"Data Source: Uploaded File — {filename}"
+        bg = PALETTE["soft_teal"]
+        border = PALETTE["teal"]
+    else:
+        text = "Data Source: Default CreditGuard Dataset"
+        bg = PALETTE["soft_blue"]
+        border = PALETTE["blue"]
+        
+    html = f"""
+    <div style="
+        background:{bg};
+        border:1px solid {border};
+        border-radius:8px;
+        padding:10px;
+        margin-bottom:15px;
+        font-size:12px;
+        font-weight:600;
+        color:{PALETTE['navy']};
+        text-align:center;
+    ">
+        {text}
+    </div>
+    """
+    st.sidebar.markdown(html, unsafe_allow_html=True)

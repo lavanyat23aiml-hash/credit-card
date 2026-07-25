@@ -12,7 +12,7 @@ import pandas as pd
 
 from dashboard.streamlit.app_config import (
     APP_TITLE, PAGES,
-    PAGE_HOME, PAGE_SEGMENT, PAGE_FINANCE,
+    PAGE_HOME, PAGE_UPLOAD, PAGE_SEGMENT, PAGE_FINANCE,
     PAGE_PERFORMANCE, PAGE_EXPLORER, PAGE_PREDICT, PAGE_DOCS,
     PATHS,
 )
@@ -27,6 +27,8 @@ from dashboard.streamlit.styles import (
     render_sidebar_brand,
     render_sidebar_footer,
     render_badge_row,
+    render_status_card,
+    render_data_source_badge,
     render_filter_panel_start,
     render_filter_panel_end,
 )
@@ -65,6 +67,14 @@ from dashboard.streamlit.auth import (
     has_role,
     render_access_denied
 )
+from dashboard.streamlit.data_validator import (
+    normalize_column_names,
+    generate_validation_report,
+    prepare_uploaded_dataset,
+    TARGET_COLUMN
+)
+import io
+
 
 # --- Page config -------------------------------------------------------------
 st.set_page_config(
@@ -97,6 +107,7 @@ def build_sidebar(df: pd.DataFrame):
     else:
         available_pages = [
             PAGE_HOME,
+            PAGE_UPLOAD,
             PAGE_SEGMENT,
             PAGE_FINANCE,
             PAGE_EXPLORER,
@@ -138,6 +149,13 @@ def build_sidebar(df: pd.DataFrame):
             filtered = filtered[filtered["delay_status"] == st.session_state["f_delay"]]
 
     render_sidebar_footer()
+    
+    # Data source badge
+    if st.session_state.get('use_uploaded_data'):
+        render_data_source_badge(st.session_state.get('uploaded_filename'))
+    else:
+        render_data_source_badge()
+        
     logout_button()
     return selection, filtered
 
@@ -145,6 +163,15 @@ def build_sidebar(df: pd.DataFrame):
 # --- Helper ------------------------------------------------------------------
 def _warn_empty():
     st.warning("⚠️ No customers match the current filters. Please adjust or reset the sidebar filters.")
+
+def get_active_dataset(default_df):
+    if st.session_state.get("use_uploaded_data") and st.session_state.get("uploaded_df") is not None:
+        return st.session_state["uploaded_df"]
+    return default_df
+
+def has_target_column(df):
+    return TARGET_COLUMN in df.columns
+
 
 
 # -------------------------------------------------------------------------------
@@ -156,6 +183,39 @@ def page_overview(df: pd.DataFrame):
 
     if df.empty:
         _warn_empty(); return
+
+    has_target = has_target_column(df)
+
+
+    if not has_target_column(df):
+        st.info("The uploaded file does not contain actual default labels. Some charts are limited.")
+        c3, c4 = st.columns(2)
+        with c3:
+            section_start("Credit Utilisation Distribution")
+            import plotly.express as px
+            fig = px.histogram(df, x="credit_utilisation_ratio", nbins=50, color_discrete_sequence=[PALETTE["blue"]])
+            st.plotly_chart(fig, width="stretch")
+            section_end()
+        return
+
+
+    if not has_target_column(df):
+        st.info("The uploaded file does not contain actual default labels. Supervised performance and default-rate analytics are unavailable.")
+        c1, c2 = st.columns(2)
+        with c1:
+            section_start("Customer Count by Age Group")
+            st.plotly_chart(plot_count_bar(df, "age_group", ""), width="stretch")
+            section_end()
+        return
+
+
+    if not has_target_column(df):
+        st.info("The uploaded file does not contain actual default labels. Supervised performance and default-rate analytics are unavailable.")
+        # Render a simple KPI for just total customers
+        k1, _ = st.columns([1, 5])
+        with k1: render_kpi_card("Total Customers", f"{len(df):,}", PALETTE["blue"], PALETTE["soft_blue"], "Portfolio size", "👥")
+        return
+
 
     total_cust  = len(df)
     total_def   = int(df["default_payment_next_month"].sum())
@@ -234,6 +294,14 @@ def page_segmentation(df: pd.DataFrame):
     if df.empty:
         _warn_empty(); return
 
+    if not has_target_column(df):
+        st.info("The uploaded file does not contain actual default labels. Supervised performance and default-rate analytics are unavailable.")
+        # Render a simple KPI for just total customers
+        k1, _ = st.columns([1, 5])
+        with k1: render_kpi_card("Total Customers", f"{len(df):,}", PALETTE["blue"], PALETTE["soft_blue"], "Portfolio size", "👥")
+        return
+
+
     total_cust = len(df)
     total_def  = int(df["default_payment_next_month"].sum())
     def_rate   = total_def / total_cust if total_cust else 0
@@ -294,6 +362,14 @@ def page_finance(df: pd.DataFrame):
                         "Analyse payment patterns, bill trends, and utilisation behaviour.")
     if df.empty:
         _warn_empty(); return
+
+    if not has_target_column(df):
+        st.info("The uploaded file does not contain actual default labels. Supervised performance and default-rate analytics are unavailable.")
+        # Render a simple KPI for just total customers
+        k1, _ = st.columns([1, 5])
+        with k1: render_kpi_card("Total Customers", f"{len(df):,}", PALETTE["blue"], PALETTE["soft_blue"], "Portfolio size", "👥")
+        return
+
 
     render_info_panel(
         "About This Page",
@@ -450,12 +526,23 @@ def page_explorer(df: pd.DataFrame):
     if df.empty:
         _warn_empty(); return
 
+    if not has_target_column(df):
+        st.info("The uploaded file does not contain actual default labels. Supervised performance and default-rate analytics are unavailable.")
+        # Render a simple KPI for just total customers
+        k1, _ = st.columns([1, 5])
+        with k1: render_kpi_card("Total Customers", f"{len(df):,}", PALETTE["blue"], PALETTE["soft_blue"], "Portfolio size", "👥")
+        return
+
+
     # Filter panel
     render_filter_panel_start()
     fe1, fe2, fe3 = st.columns(3)
     with fe1:
         search_id = st.text_input("🔎 Search by Customer ID (exact or partial)", "")
-        sel_def   = st.selectbox("Default Status", ["All", "Defaulter", "Reliable"], key="f_explorer_def")
+        if has_target:
+            sel_def = st.selectbox("Default Status", ["All", "Defaulter", "Reliable"], key="f_explorer_def")
+        else:
+            sel_def = "All" 
     with fe2:
         min_delay = int(df["delayed_payment_count"].min())
         max_delay = int(df["delayed_payment_count"].max())
@@ -468,8 +555,9 @@ def page_explorer(df: pd.DataFrame):
     exp_df = df.copy()
     if search_id:
         exp_df = exp_df[exp_df["id"].astype(str).str.contains(search_id, na=False)]
-    if sel_def == "Defaulter":  exp_df = exp_df[exp_df["default_payment_next_month"] == 1]
-    if sel_def == "Reliable":   exp_df = exp_df[exp_df["default_payment_next_month"] == 0]
+    if has_target:
+        if sel_def == "Defaulter":  exp_df = exp_df[exp_df["default_payment_next_month"] == 1]
+        if sel_def == "Reliable":   exp_df = exp_df[exp_df["default_payment_next_month"] == 0]
     exp_df = exp_df[exp_df["delayed_payment_count"] >= sel_delay_count]
     exp_df = exp_df[exp_df["maximum_delay_months"] >= sel_max_delay]
     exp_df = exp_df[
@@ -477,15 +565,19 @@ def page_explorer(df: pd.DataFrame):
         (exp_df["credit_utilisation_ratio"] <= sel_util_max)
     ]
 
-    count_col = "default_payment_next_month"
     n_total   = len(exp_df)
-    n_def     = int(exp_df[count_col].sum()) if n_total else 0
-    m1, m2, m3, _ = st.columns([1, 1, 1, 2])
-    with m1: render_kpi_card("Matching Customers", f"{n_total:,}",  PALETTE["blue"],   PALETTE["soft_blue"],   "", "👥")
-    with m2: render_kpi_card("Defaulters Found",   f"{n_def:,}",   PALETTE["red"],    PALETTE["soft_red"],    "", "⚠️")
-    with m3:
-        rate = n_def / n_total if n_total else 0
-        render_kpi_card("Default Rate",  f"{rate:.1%}", PALETTE["orange"], PALETTE["soft_orange"], "", "📉")
+    if has_target:
+        count_col = "default_payment_next_month"
+        n_def     = int(exp_df[count_col].sum()) if n_total else 0
+        m1, m2, m3, _ = st.columns([1, 1, 1, 2])
+        with m1: render_kpi_card("Matching Customers", f"{n_total:,}",  PALETTE["blue"],   PALETTE["soft_blue"],   "", "👥")
+        with m2: render_kpi_card("Defaulters Found",   f"{n_def:,}",   PALETTE["red"],    PALETTE["soft_red"],    "", "⚠️")
+        with m3:
+            rate = n_def / n_total if n_total else 0
+            render_kpi_card("Default Rate",  f"{rate:.1%}", PALETTE["orange"], PALETTE["soft_orange"], "", "📉")
+    else:
+        m1, _ = st.columns([1, 3])
+        with m1: render_kpi_card("Matching Customers", f"{n_total:,}",  PALETTE["blue"],   PALETTE["soft_blue"],   "", "👥")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -493,7 +585,7 @@ def page_explorer(df: pd.DataFrame):
     if exp_df.empty:
         st.warning("No customers match the current search or filters.")
     else:
-        st.caption(f"Showing up to 500 of {n_total:,} matched customers. Defaulters are highlighted in red.")
+        st.caption(f"Showing up to 500 of {n_total:,} matched customers.")
         display_cols = [
             "id", "age", "age_group", "sex_label", "education_label", "marriage_label",
             "limit_bal", "credit_limit_group", "delayed_payment_count", "maximum_delay_months",
@@ -634,7 +726,76 @@ segmentation, repayment behaviour analysis, model performance comparison, and re
   Their inclusion does not imply endorsement of using such features in real-world credit scoring.
         """)
         section_end()
+def page_upload():
+    render_page_header(
+        "📤",
+        "Data Upload & Validation",
+        "Upload customer credit data and verify compatibility before analysis.",
+    )
 
+    st.info(
+        "Uploaded data is processed temporarily within this session "
+        "and is not stored by CreditGuard."
+    )
+
+    uploaded_file = st.file_uploader(
+        "Upload customer credit data",
+        type=["csv", "xlsx"],
+    )
+
+    if uploaded_file is None:
+        st.warning("Upload a CSV or XLSX file to begin validation.")
+        return
+
+    try:
+        if uploaded_file.name.lower().endswith(".csv"):
+            uploaded_df = pd.read_csv(uploaded_file)
+        else:
+            uploaded_df = pd.read_excel(uploaded_file)
+    except Exception as exc:
+        st.error(f"Unable to read the uploaded file: {exc}")
+        return
+
+    # Normalize column names before preparing the dataset
+    mapping = normalize_column_names(uploaded_df)
+    
+    # Ensure required columns are present before proceeding
+    report = generate_validation_report(uploaded_df)
+    if report["status"] == "Invalid File":
+        st.error("Invalid File: " + " ".join([e["message"] for e in report["errors"]]))
+        return
+
+    prepared_df = prepare_uploaded_dataset(uploaded_df)
+
+    st.session_state["uploaded_df"] = prepared_df
+    st.session_state["uploaded_filename"] = uploaded_file.name
+    st.success(
+        f"File loaded successfully: {uploaded_file.name} "
+        f"({len(uploaded_df):,} rows, {len(uploaded_df.columns)} columns)"
+    )
+
+    st.subheader("Data Preview")
+    st.dataframe(uploaded_df.head(20), width="stretch", hide_index=True)
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        if st.button("Use Uploaded Dataset", width="stretch"):
+            st.session_state["use_uploaded_data"] = True
+            st.rerun()
+
+    with c2:
+        if st.button("Restore Default Dataset", width="stretch"):
+            st.session_state["use_uploaded_data"] = False
+            st.rerun()
+
+    with c3:
+        if st.button("Clear Uploaded File", width="stretch"):
+            st.session_state.pop("uploaded_df", None)
+            st.session_state.pop("uploaded_filename", None)
+            st.session_state.pop("uploaded_validation_report", None)
+            st.session_state["use_uploaded_data"] = False
+            st.rerun()
 
 # -------------------------------------------------------------------------------
 # MAIN
@@ -660,9 +821,11 @@ def main():
     if "default_status" not in df.columns:
         df["default_status"] = df["default_payment_next_month"].map({1: "Defaulter", 0: "Reliable"})
 
-    selection, filtered_df = build_sidebar(df)
+    active_df = get_active_dataset(df)
+    selection, filtered_df = build_sidebar(active_df)
 
     if selection == PAGE_HOME:        page_overview(filtered_df)
+    elif selection == PAGE_UPLOAD:    page_upload()
     elif selection == PAGE_SEGMENT:   page_segmentation(filtered_df)
     elif selection == PAGE_FINANCE:   page_finance(filtered_df)
     elif selection == PAGE_PERFORMANCE:

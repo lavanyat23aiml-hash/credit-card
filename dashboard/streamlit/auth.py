@@ -91,6 +91,15 @@ def logout_button():
         st.session_state["username"] = None
         st.session_state["display_name"] = None
         st.session_state["user_role"] = None
+        
+        # Clear upload session data
+        if "use_uploaded_data" in st.session_state:
+            st.session_state["use_uploaded_data"] = False
+        if "uploaded_df" in st.session_state:
+            st.session_state["uploaded_df"] = None
+        if "uploaded_filename" in st.session_state:
+            st.session_state["uploaded_filename"] = None
+            
         st.rerun()
 
 def require_authentication():

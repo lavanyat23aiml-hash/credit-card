@@ -12,3 +12,4 @@ plotly
 sqlalchemy
 pytest
 bcrypt
+

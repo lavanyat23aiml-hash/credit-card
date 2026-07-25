@@ -8,15 +8,17 @@ APP_SUBTITLE = "Portfolio Analytics and Default Risk Estimation"
 COLORS = PALETTE
 
 PAGE_HOME        = "1. Executive Overview"
-PAGE_SEGMENT     = "2. Customer Segmentation"
-PAGE_FINANCE     = "3. Repayment & Financial Behaviour"
-PAGE_PERFORMANCE = "4. Model Performance"
-PAGE_EXPLORER    = "5. High-Risk Customer Explorer"
-PAGE_PREDICT     = "6. Customer Risk Prediction"
-PAGE_DOCS        = "7. Project Documentation"
+PAGE_UPLOAD      = "2. Data Upload & Validation"
+PAGE_SEGMENT     = "3. Customer Segmentation"
+PAGE_FINANCE     = "4. Repayment & Financial Behaviour"
+PAGE_PERFORMANCE = "5. Model Performance"
+PAGE_EXPLORER    = "6. High-Risk Customer Explorer"
+PAGE_PREDICT     = "7. Customer Risk Prediction"
+PAGE_DOCS        = "8. Project Documentation"
 
 PAGES = [
     PAGE_HOME,
+    PAGE_UPLOAD,
     PAGE_SEGMENT,
     PAGE_FINANCE,
     PAGE_PERFORMANCE,

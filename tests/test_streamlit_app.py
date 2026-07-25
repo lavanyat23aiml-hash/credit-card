@@ -18,15 +18,16 @@ def test_app_imports():
 
 
 def test_page_routes_defined():
-    """All 7 page route constants must be defined in app_config."""
+    """All 8 page route constants must be defined in app_config."""
     from dashboard.streamlit.app_config import (
-        PAGE_HOME, PAGE_SEGMENT, PAGE_FINANCE,
+        PAGE_HOME, PAGE_UPLOAD, PAGE_SEGMENT, PAGE_FINANCE,
         PAGE_PERFORMANCE, PAGE_EXPLORER, PAGE_PREDICT, PAGE_DOCS, PAGES,
     )
-    assert len(PAGES) == 7
-    pages = {PAGE_HOME, PAGE_SEGMENT, PAGE_FINANCE,
+    assert len(PAGES) == 8
+
+    pages = {PAGE_HOME, PAGE_UPLOAD, PAGE_SEGMENT, PAGE_FINANCE,
              PAGE_PERFORMANCE, PAGE_EXPLORER, PAGE_PREDICT, PAGE_DOCS}
-    assert len(pages) == 7
+    assert len(pages) == 8
 
 
 # ─── 2. Required Files ────────────────────────────────────────────────────────
