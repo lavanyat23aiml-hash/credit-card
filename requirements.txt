@@ -11,3 +11,4 @@ joblib
 plotly
 sqlalchemy
 pytest
+bcrypt

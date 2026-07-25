@@ -56,6 +56,15 @@ from dashboard.streamlit.charts import (
     plot_feature_importance,
 )
 from src.utils import predict_default_risk
+from dashboard.streamlit.auth import (
+    initialize_auth_state,
+    is_authenticated,
+    login_form,
+    logout_button,
+    get_current_role,
+    has_role,
+    render_access_denied
+)
 
 # --- Page config -------------------------------------------------------------
 st.set_page_config(
@@ -81,7 +90,21 @@ def _reset_filters():
 # --- Sidebar -----------------------------------------------------------------
 def build_sidebar(df: pd.DataFrame):
     render_sidebar_brand()
-    selection = st.sidebar.radio("Navigation", PAGES, label_visibility="collapsed")
+    
+    role = get_current_role()
+    if role == "Admin":
+        available_pages = PAGES
+    else:
+        available_pages = [
+            PAGE_HOME,
+            PAGE_SEGMENT,
+            PAGE_FINANCE,
+            PAGE_EXPLORER,
+            PAGE_PREDICT,
+            PAGE_DOCS,
+        ]
+        
+    selection = st.sidebar.radio("Navigation", available_pages, label_visibility="collapsed")
     st.sidebar.markdown("---")
 
     filtered = df.copy()
@@ -115,6 +138,7 @@ def build_sidebar(df: pd.DataFrame):
             filtered = filtered[filtered["delay_status"] == st.session_state["f_delay"]]
 
     render_sidebar_footer()
+    logout_button()
     return selection, filtered
 
 
@@ -617,6 +641,12 @@ segmentation, repayment behaviour analysis, model performance comparison, and re
 # -------------------------------------------------------------------------------
 def main():
     inject_global_styles()
+    initialize_auth_state()
+
+    if not is_authenticated():
+        login_form()
+        st.stop()
+
     _init_session_state()
 
     df = load_cleaned_data(PATHS["cleaned_data"])
@@ -635,7 +665,11 @@ def main():
     if selection == PAGE_HOME:        page_overview(filtered_df)
     elif selection == PAGE_SEGMENT:   page_segmentation(filtered_df)
     elif selection == PAGE_FINANCE:   page_finance(filtered_df)
-    elif selection == PAGE_PERFORMANCE: page_performance()
+    elif selection == PAGE_PERFORMANCE:
+        if not has_role(["Admin"]):
+            render_access_denied()
+        else:
+            page_performance()
     elif selection == PAGE_EXPLORER:  page_explorer(filtered_df)
     elif selection == PAGE_PREDICT:   page_predict()
     elif selection == PAGE_DOCS:      page_docs()

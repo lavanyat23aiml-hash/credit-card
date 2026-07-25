@@ -153,6 +153,29 @@ creditguard-credit-risk/
 - **Phase 8 Complete:** Streamlit Analytics Application Implementation. Built a highly robust, 7-page local Streamlit dashboard (`app.py`) which acts as the **primary interactive interface** for the project. Features include Portfolio Analytics, High-Risk Customer Explorer, interactive visual segmentation, and an ML-powered Customer Risk Prediction engine. Run locally via `streamlit run app.py`. Cloud deployment is currently pending.
 - **Phase 9 Complete:** Optional Power BI Support Package. An automated script generates a comprehensive manual-build package inside `dashboard/powerbi/`. This includes M scripts, DAX measures, Theme JSON, and Markdown blueprints. *Note: The Power BI deliverable is optional documentation; no `.pbix` file is generated or claimed, and the Streamlit app replaces it as the functional dashboard.*
 
+## Local Authentication Setup
+Before running the application locally, you must configure your `.streamlit/secrets.toml` file to define user accounts.
+
+1. **Copy the example configuration:**
+   Copy `.streamlit/secrets.example.toml` and rename it to `.streamlit/secrets.toml` in the same directory.
+   
+2. **Generate password hashes:**
+   Run the password hash helper script to securely generate `bcrypt` hashes for your users.
+   ```bash
+   python scripts/generate_password_hash.py
+   ```
+   
+3. **Update the secrets file:**
+   Paste the generated hash into the corresponding `password_hash` field in `.streamlit/secrets.toml`.
+   *Note: Never commit `secrets.toml` to version control.*
+
+## Streamlit Cloud Deployment
+To deploy the application with authentication on Streamlit Community Cloud:
+1. Open your deployed app settings on Streamlit Cloud.
+2. Navigate to **Secrets**.
+3. Paste the contents of your configured `secrets.toml` (with the valid bcrypt hashes).
+4. Save and reboot the app.
+
 ---
 
 ## Author

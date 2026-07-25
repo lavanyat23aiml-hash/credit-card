@@ -442,3 +442,78 @@ def render_filter_panel_start():
 
 def render_filter_panel_end():
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────
+# AUTHENTICATION
+# ─────────────────────────────────────────────
+def render_login_header():
+    """Header for the login page."""
+    html = f"""
+    <div style="text-align: center; margin-bottom: 30px;">
+        <div style="font-size: 32px; font-weight: 700; color: {PALETTE['navy']}; font-family: {FONT_STACK};">
+            💳 CreditGuard
+        </div>
+        <div style="font-size: 16px; color: {PALETTE['text_secondary']}; margin-top: 5px; font-family: {FONT_STACK};">
+            Credit Risk Analytics Platform
+        </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+def render_login_footer():
+    """Footer disclaimer for the login page."""
+    html = f"""
+    <div style="text-align: center; font-size: 12px; color: {PALETTE['text_secondary']}; font-family: {FONT_STACK}; margin-top: 20px;">
+        🔒 Authorized access only. <br/>
+        This system is for educational portfolio demonstration.
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+def render_access_denied_page():
+    """Renders a styled access denied message."""
+    html = f"""
+    <div style="
+        background: {PALETTE['white']};
+        border: 1px solid {PALETTE['border']};
+        border-radius: 14px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-top: 50px;
+    ">
+        <div style="font-size: 48px; margin-bottom: 20px;">🚫</div>
+        <div style="font-size: 24px; font-weight: 700; color: {PALETTE['navy']}; margin-bottom: 10px;">
+            Access Denied
+        </div>
+        <div style="font-size: 16px; color: {PALETTE['text_secondary']};">
+            Your current role does not have permission to view this page.
+        </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+def render_user_profile_sidebar(name: str, role: str):
+    """Renders the signed-in user profile in the sidebar."""
+    html = f"""
+    <div style="
+        background: {PALETTE['white']};
+        border: 1px solid {PALETTE['border']};
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 20px;
+        margin-top: 10px;
+    ">
+        <div style="font-size: 12px; color: {PALETTE['text_secondary']}; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">
+            Signed in as
+        </div>
+        <div style="font-size: 16px; font-weight: 700; color: {PALETTE['navy']};">
+            {name}
+        </div>
+        <div style="font-size: 14px; color: {PALETTE['blue']}; margin-top: 2px;">
+            {role}
+        </div>
+    </div>
+    """
+    st.sidebar.markdown(html, unsafe_allow_html=True)
