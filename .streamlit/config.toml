@@ -1,9 +1,20 @@
 [theme]
-primaryColor = "#1B263B"
-backgroundColor = "#F8F9FA"
+primaryColor      = "#1B263B"
+backgroundColor   = "#F8F9FA"
 secondaryBackgroundColor = "#E0E1DD"
-textColor = "#1A1A1D"
-font = "sans serif"
+textColor         = "#1A1A1D"
+font              = "sans serif"
+
+[server]
+# Allow all origins (needed for Streamlit Cloud and Docker reverse proxies)
+enableCORS        = false
+enableXsrfProtection = true
+maxUploadSize     = 25          # MB — restricts uploaded file size
+headless          = true        # Required for production/Docker
 
 [browser]
-gatherUsageStats = false
+gatherUsageStats  = false
+serverAddress     = "0.0.0.0"  # Listen on all interfaces in Docker
+
+[runner]
+fastReruns        = true

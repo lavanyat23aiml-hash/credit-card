@@ -115,7 +115,8 @@ def prepare_uploaded_dataset(df: pd.DataFrame) -> pd.DataFrame:
     
     # Safe coercion for required model columns
     for col in REQUIRED_MODEL_COLUMNS:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
         
     if TARGET_COLUMN in df.columns:
         df[TARGET_COLUMN] = pd.to_numeric(df[TARGET_COLUMN], errors='coerce')
@@ -128,22 +129,36 @@ def prepare_uploaded_dataset(df: pd.DataFrame) -> pd.DataFrame:
     pay_amt_cols = ["pay_amt1", "pay_amt2", "pay_amt3", "pay_amt4", "pay_amt5", "pay_amt6"]
     pay_status_cols = ["pay_0", "pay_2", "pay_3", "pay_4", "pay_5", "pay_6"]
     
-    df["average_bill_amount"] = df[bill_cols].mean(axis=1)
-    df["total_bill_amount"] = df[bill_cols].sum(axis=1)
-    df["average_payment_amount"] = df[pay_amt_cols].mean(axis=1)
-    df["total_payment_amount"] = df[pay_amt_cols].sum(axis=1)
+    has_bill = all(c in df.columns for c in bill_cols)
+    has_pay_amt = all(c in df.columns for c in pay_amt_cols)
+    has_pay_status = all(c in df.columns for c in pay_status_cols)
     
-    # Safe division for payment_to_bill_ratio
-    df["payment_to_bill_ratio"] = df["total_payment_amount"] / df["total_bill_amount"].replace({0: 1})
-    
-    df["maximum_delay_months"] = df[pay_status_cols].apply(lambda row: max([v for v in row if v > 0] + [0]), axis=1)
-    df["delayed_payment_count"] = df[pay_status_cols].apply(lambda row: sum(1 for v in row if v > 0), axis=1)
-    df["has_payment_delay"] = (df["delayed_payment_count"] > 0).astype(int)
-    
-    df["credit_utilisation_ratio"] = df["total_bill_amount"] / (6 * df["limit_bal"].replace({0: 1}))
-    
+    if has_bill:
+        df["average_bill_amount"] = df[bill_cols].mean(axis=1)
+        df["total_bill_amount"] = df[bill_cols].sum(axis=1)
+        
+    if has_pay_amt:
+        df["average_payment_amount"] = df[pay_amt_cols].mean(axis=1)
+        df["total_payment_amount"] = df[pay_amt_cols].sum(axis=1)
+        
+    if has_pay_amt and has_bill:
+        df["payment_to_bill_ratio"] = df["total_payment_amount"] / df["total_bill_amount"].replace({0: 1})
+        
+    if has_pay_status:
+        df["maximum_delay_months"] = df[pay_status_cols].apply(lambda row: max([v for v in row if v > 0] + [0]), axis=1)
+        df["delayed_payment_count"] = df[pay_status_cols].apply(lambda row: sum(1 for v in row if v > 0), axis=1)
+        df["has_payment_delay"] = (df["delayed_payment_count"] > 0).astype(int)
+        df["delay_status"] = df["has_payment_delay"].map({1: "Delayed", 0: "No Delay"})
+    else:
+        if "has_payment_delay" not in df.columns:
+            df["has_payment_delay"] = np.nan
+        if "delay_status" not in df.columns:
+            df["delay_status"] = "Unknown"
+            
+    if has_bill and "limit_bal" in df.columns:
+        df["credit_utilisation_ratio"] = df["total_bill_amount"] / (6 * df["limit_bal"].replace({0: 1}))
+        
     # Labels
-    df["delay_status"] = df["has_payment_delay"].map({1: "Delayed", 0: "No Delay"})
     if TARGET_COLUMN in df.columns:
         df["default_status"] = df[TARGET_COLUMN].map({1: "Defaulter", 0: "Reliable"})
         
@@ -154,7 +169,9 @@ def prepare_uploaded_dataset(df: pd.DataFrame) -> pd.DataFrame:
         elif age < 50: return "40s"
         elif age < 60: return "50s"
         else: return "60+"
-    df["age_group"] = df["age"].apply(categorize_age)
+        
+    if "age" in df.columns:
+        df["age_group"] = df["age"].apply(categorize_age)
     
     def categorize_credit(limit):
         if pd.isna(limit): return "Unknown"
@@ -162,10 +179,15 @@ def prepare_uploaded_dataset(df: pd.DataFrame) -> pd.DataFrame:
         elif limit <= 150000: return "Medium (50k-150k)"
         elif limit <= 300000: return "High (150k-300k)"
         else: return "Very High (>300k)"
-    df["credit_limit_group"] = df["limit_bal"].apply(categorize_credit)
-    
-    df["sex_label"] = df["sex"].map({1: "Male", 2: "Female"}).fillna("Unknown")
-    df["education_label"] = df["education"].map({1: "Graduate School", 2: "University", 3: "High School", 4: "Others"}).fillna("Unknown")
-    df["marriage_label"] = df["marriage"].map({1: "Married", 2: "Single", 3: "Others"}).fillna("Unknown")
+        
+    if "limit_bal" in df.columns:
+        df["credit_limit_group"] = df["limit_bal"].apply(categorize_credit)
+        
+    if "sex" in df.columns:
+        df["sex_label"] = df["sex"].map({1: "Male", 2: "Female"}).fillna("Unknown")
+    if "education" in df.columns:
+        df["education_label"] = df["education"].map({1: "Graduate School", 2: "University", 3: "High School", 4: "Others"}).fillna("Unknown")
+    if "marriage" in df.columns:
+        df["marriage_label"] = df["marriage"].map({1: "Married", 2: "Single", 3: "Others"}).fillna("Unknown")
     
     return df

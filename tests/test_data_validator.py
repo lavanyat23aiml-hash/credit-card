@@ -16,11 +16,11 @@ def get_valid_row():
 
 def test_normalize_column_names():
     df = pd.DataFrame({"LIMIT BAL": [1], "PAY-0": [1], "default payment next month": [1]})
-    mapping = normalize_column_names(df)
+    normalized_df, mapping = normalize_column_names(df)
     
-    assert "limit_bal" in df.columns
-    assert "pay_0" in df.columns
-    assert "default_payment_next_month" in df.columns
+    assert "limit_bal" in normalized_df.columns
+    assert "pay_0" in normalized_df.columns
+    assert "default_payment_next_month" in normalized_df.columns
     assert mapping["LIMIT BAL"] == "limit_bal"
 
 def test_generate_validation_report_valid():

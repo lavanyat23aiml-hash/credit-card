@@ -43,16 +43,43 @@ data/raw/*
 data/processed/*.tmp
 data/processed/*.parquet
 
+# Ignore database files (contain live customer data)
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/backups/
+!data/backups/.gitkeep
+
 # Ignore temporary and large model files
 models/*.onnx
 models/*.h5
 models/*_temp.pkl
 models/*_temp.joblib
 
+# Ignore production model pipeline (large binary — distribute separately)
+# models/creditguard_final_pipeline.joblib
+
+# Ignore temporary uploads
+uploads/
+tmp_uploads/
+*.upload
+
+# Ignore Docker build cache
+.docker/
+
 # Logs and temporary files
 *.log
 logs/
 *.tmp
 
-# Streamlit secrets
+# Streamlit secrets (contains passwords — NEVER commit)
 .streamlit/secrets.toml
+
+# Scratch and fix scripts
+scratch/
+fix_*.py
+
+# SQLite DLLs (Windows development only)
+sqlite3.dll
+sqlite3.def
+sqlite.zip

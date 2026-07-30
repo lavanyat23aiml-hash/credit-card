@@ -1,0 +1,58 @@
+# Git-related
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Development notebooks
+notebooks/
+
+# Tests (not needed in production image)
+tests/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets (mounted as volume at runtime)
+.streamlit/secrets.toml
+
+# Logs and temporary files
+*.log
+logs/
+*.tmp
+
+# Raw data
+data/raw/
+
+# Development scripts
+scratch/
+fix_*.py
+scripts/generate_password_hash.py
+
+# Windows SQLite DLLs
+sqlite3.dll
+sqlite3.def
+sqlite.zip
+
+# Docs (reduce image size)
+docs/
+images/
+
+# Environment files
+.env
+.env.*
+!.env.example

@@ -574,3 +574,233 @@ def render_data_source_badge(filename: str = None):
     </div>
     """
     st.sidebar.markdown(html, unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────
+# FRAUD ANALYTICS REUSABLE STYLING COMPONENTS
+# ─────────────────────────────────────────────
+def render_fraud_disclaimer(available_indicators: list = None, unavailable_indicators: list = None):
+    """Renders the fraud screening disclaimer panel and dynamic warning for missing columns."""
+    html = f"""
+    <div style="
+        background: {PALETTE['soft_orange']};
+        border: 1px solid {PALETTE['orange']};
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        color: {PALETTE['navy']};
+    ">
+        <b>⚠️ Disclaimer:</b> This page provides rule-based screening indicators only.
+        It does not confirm fraud and should not be used as the sole basis for adverse customer decisions.
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+    if unavailable_indicators:
+        un_list = "".join([f"<li>{ind}</li>" for ind in unavailable_indicators])
+        av_list = "".join([f"<li>{ind}</li>" for ind in (available_indicators or [])])
+        
+        warn_html = f"""
+        <div style="
+            background: {PALETTE['soft_red']};
+            border: 1px solid {PALETTE['red']};
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: {PALETTE['navy']};
+        ">
+            <b>⚠️ Warning:</b> Some indicators could not be calculated because the uploaded dataset does not contain the required columns.
+            <div style="margin-top: 10px; display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <b style="color: {PALETTE['red']};">Unavailable Indicators:</b>
+                    <ul style="margin: 4px 0 0 16px; padding: 0;">{un_list}</ul>
+                </div>
+                <div style="flex: 1;">
+                    <b style="color: {PALETTE['green']};">Calculated Indicators:</b>
+                    <ul style="margin: 4px 0 0 16px; padding: 0;">{av_list}</ul>
+                </div>
+            </div>
+        </div>
+        """
+        st.markdown(warn_html, unsafe_allow_html=True)
+
+
+def render_fraud_status_card(selected_id, level, score, indicator_count):
+    """Displays customer fraud risk banner."""
+    level_colors = {"High": PALETTE["red"], "Moderate": PALETTE["orange"], "Low": PALETTE["green"]}
+    level_bg = {"High": PALETTE["soft_red"], "Moderate": PALETTE["soft_orange"], "Low": PALETTE["soft_green"]}
+    
+    bg = level_bg.get(level, PALETTE['soft_green'])
+    color = level_colors.get(level, PALETTE['green'])
+    
+    html = f"""
+    <div style="
+        background: {bg};
+        border: 1px solid {color};
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 16px;
+        color: {PALETTE['navy']};
+    ">
+        <b style="font-size: 16px;">Customer {selected_id}</b> &nbsp;·&nbsp;
+        <span style="color: {color}; font-weight: 700;">{level} Indicator Level</span> &nbsp;·&nbsp;
+        Score: <b>{int(score)}</b> &nbsp;·&nbsp;
+        Indicators: <b>{int(indicator_count)}</b>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_review_recommendation(level, rec_text):
+    """Display recommended action section."""
+    level_colors = {"High": PALETTE["red"], "Moderate": PALETTE["orange"], "Low": PALETTE["green"]}
+    level_bg = {"High": PALETTE["soft_red"], "Moderate": PALETTE["soft_orange"], "Low": PALETTE["soft_green"]}
+    
+    bg = level_bg.get(level, PALETTE['soft_blue'])
+    color = level_colors.get(level, PALETTE['blue'])
+    
+    html = f"""
+    <div style="
+        background: {bg};
+        border: 1px solid {color};
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-top: 8px;
+        color: {PALETTE['navy']};
+    ">
+        <b>📋 Review Recommendation:</b> {rec_text}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_indicator_badge(label: str, level: str):
+    """Create color-coded indicator badges."""
+    level_colors = {
+        "high": (PALETTE["soft_red"], PALETTE["red"]),
+        "moderate": (PALETTE["soft_orange"], PALETTE["orange"]),
+        "low": (PALETTE["soft_green"], PALETTE["green"]),
+        "info": (PALETTE["soft_blue"], PALETTE["blue"]),
+    }
+    
+    key = level.lower()
+    bg, fg = level_colors.get(key, (PALETTE["soft_blue"], PALETTE["blue"]))
+    
+    html = f"""
+    <span style="
+        background-color: {bg};
+        color: {fg};
+        border: 1px solid {fg};
+        border-radius: 12px;
+        padding: 2px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-block;
+        margin-right: 6px;
+        margin-bottom: 6px;
+    ">
+        {label}
+    </span>
+    """
+    return html
+
+# ─────────────────────────────────────────────
+# CUSTOMER RISK STYLING
+# ─────────────────────────────────────────────
+def render_risk_level_badge(level: str):
+    """Renders a pill badge for customer risk level."""
+    level = str(level).strip().title()
+    if level == "High":
+        bg, fg = PALETTE["soft_red"], PALETTE["red"]
+    elif level == "Moderate":
+        bg, fg = PALETTE["soft_orange"], PALETTE["orange"]
+    else:
+        bg, fg = PALETTE["soft_green"], PALETTE["green"]
+        
+    return f"""
+    <span style="
+        background-color: {bg};
+        color: {fg};
+        border: 1px solid {fg};
+        border-radius: 12px;
+        padding: 4px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-block;
+    ">
+        {level}
+    </span>
+    """
+
+def render_risk_reason_card(reason: str):
+    """Renders an explanation card for a risk reason."""
+    return f"""
+    <div style="
+        background: {PALETTE['white']};
+        border-left: 4px solid {PALETTE['orange']};
+        border-radius: 6px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        font-size: 13px;
+        color: {PALETTE['navy']};
+        font-weight: 500;
+    ">
+        • {reason}
+    </div>
+    """
+
+# ─────────────────────────────────────────────
+# XAI STYLING
+# ─────────────────────────────────────────────
+def render_xai_badge(direction: str, value: str):
+    """Renders a pill badge for SHAP contributions."""
+    direction = str(direction).strip().title()
+    if "Increase" in direction:
+        bg, fg = PALETTE["soft_red"], PALETTE["red"]
+    elif "Decrease" in direction:
+        bg, fg = PALETTE["soft_green"], PALETTE["green"]
+    else:
+        bg, fg = PALETTE["soft_blue"], PALETTE["blue"]
+        
+    return f"""
+    <span style="
+        background-color: {bg};
+        color: {fg};
+        border: 1px solid {fg};
+        border-radius: 12px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-block;
+    ">
+        {value}
+    </span>
+    """
+
+def render_xai_explanation_panel(explanation: str):
+    """Renders a formatted panel for natural language explanation."""
+    import markdown
+    
+    # Convert simple markdown (bolding, lists) to HTML for safe embedding
+    html_content = markdown.markdown(explanation)
+    
+    return f"""
+    <div style="
+        background: {PALETTE['white']};
+        border: 1px solid {PALETTE['border']};
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-top: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        font-family: {FONT_STACK};
+        font-size: 14px;
+        line-height: 1.6;
+        color: {PALETTE['navy']};
+    ">
+        {html_content}
+    </div>
+    """
