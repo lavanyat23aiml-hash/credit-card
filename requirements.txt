@@ -23,7 +23,7 @@ shap==0.46.0
 sqlalchemy==2.0.36
 
 # Web application
-streamlit==1.40.2
+streamlit==1.58.0
 
 # Security
 bcrypt==4.2.1
