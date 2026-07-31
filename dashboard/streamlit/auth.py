@@ -114,7 +114,7 @@ def login_form():
         with st.form("login_form"):
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
-            submit = st.form_submit_button("Login", width="stretch")
+            submit = st.form_submit_button("Login")
             
             if submit:
                 if not username or not password:
