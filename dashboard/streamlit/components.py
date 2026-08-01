@@ -400,47 +400,39 @@ def render_global_feature_importance(importance_df: pd.DataFrame):
 
 def render_prediction_breakdown(breakdown_df: pd.DataFrame):
     """Renders the detailed tabular breakdown of SHAP values."""
-    from dashboard.streamlit.styles import render_xai_badge
-    
     if breakdown_df.empty:
         st.info("Detailed breakdown not available.")
         return
         
     # Format the dataframe for display
-    display_df = breakdown_df.copy()
+    display_df = breakdown_df.head(10).copy()
     display_df['Feature'] = display_df['Feature'].apply(lambda x: x.replace('_', ' ').title())
     
-    # We can't render HTML directly in st.dataframe without special config, 
-    # so we will use st.data_editor or st.table, or just HTML table.
+    # Format SHAP values to three decimal places
+    display_df['Contribution'] = display_df['Contribution'].map('{:+.3f}'.format)
+    
+    # Format values if they are floats
+    display_df['Value'] = display_df['Value'].apply(lambda x: f"{x:.2f}" if isinstance(x, float) else str(x))
+    
+    # Color-code direction with emojis
+    def format_direction(direction):
+        if direction == 'Increases Risk':
+            return '🟥 Increases Risk'
+        elif direction == 'Decreases Risk':
+            return '🟩 Decreases Risk'
+        return direction
+        
+    display_df['Direction'] = display_df['Direction'].apply(format_direction)
+    
+    # Rename columns to match requirements
+    display_df = display_df.rename(columns={'Contribution': 'SHAP Contribution'})
+    
+    # Keep only the requested columns in correct order
+    display_cols = ['Feature', 'Value', 'SHAP Contribution', 'Direction']
+    display_df = display_df[display_cols]
+    
     st.markdown("#### Detailed Feature Breakdown")
-    
-    # Simple HTML table for badges
-    html = f"""
-    <table style="width:100%; text-align:left; border-collapse: collapse; font-family:{FONT_STACK}; font-size:14px;">
-        <tr style="border-bottom: 2px solid {PALETTE['border']};">
-            <th style="padding:10px;">Feature</th>
-            <th style="padding:10px;">Value</th>
-            <th style="padding:10px;">Contribution (SHAP)</th>
-            <th style="padding:10px;">Direction</th>
-        </tr>
-    """
-    
-    for _, row in display_df.head(10).iterrows():
-        val_str = f"{row['Value']:.2f}" if isinstance(row['Value'], float) else str(row['Value'])
-        contrib_str = f"{row['Contribution']:+.3f}"
-        badge = render_xai_badge(row['Direction'], row['Direction'])
-        
-        html += f"""
-        <tr style="border-bottom: 1px solid {PALETTE['border']};">
-            <td style="padding:10px; font-weight:600; color:{PALETTE['navy']};">{row['Feature']}</td>
-            <td style="padding:10px;">{val_str}</td>
-            <td style="padding:10px;">{contrib_str}</td>
-            <td style="padding:10px;">{badge}</td>
-        </tr>
-        """
-        
-    html += "</table>"
-    st.markdown(html, unsafe_allow_html=True)
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 def render_customer_explanation(explanation_data: dict):
     """Renders the complete customer explanation section."""

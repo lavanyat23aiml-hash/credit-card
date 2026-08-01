@@ -479,30 +479,50 @@ def page_explainable_ai(df: pd.DataFrame):
                         "Understand why the ML model makes specific predictions.")
                         
     # Load model pipeline
-    pipeline, _ = load_model_pipeline(PATHS["model_pipeline"], PATHS["model_metadata"])
+    pipeline, metadata = load_model_pipeline(PATHS["model_pipeline"], PATHS["model_metadata"])
     
     if pipeline is None:
-        st.error("ML model pipeline could not be loaded. Please ensure it is trained.")
+        st.warning("Model loading failed: ML model pipeline could not be loaded. Please ensure it is trained.")
         return
         
-    # Get features used by model (dropping target and ID columns if present)
-    model_features = [c for c in df.columns if c not in ["customer_id", "default_payment_next_month"]]
+    # Get features used by model
+    if metadata and "feature_names" in metadata:
+        model_features = metadata["feature_names"]
+    else:
+        st.warning("Model loading failed: Model metadata is missing feature names. Cannot generate explanations.")
+        return
+        
+    # Verify feature alignment
+    missing_features = [f for f in model_features if f not in df.columns]
+    if missing_features:
+        st.warning(f"Feature mismatch: The following required features are missing from the dataset and will be zero-filled: {', '.join(missing_features)}")
+        
+    df_aligned = df.reindex(columns=list(df.columns) + missing_features, fill_value=0) if missing_features else df.copy()
     
     with st.spinner("Initializing SHAP Explainer..."):
-        # We pass a small sample for the background data (used for KernelExplainer / LinearExplainer)
-        explainer = get_shap_explainer(pipeline, df[model_features].sample(min(100, len(df)), random_state=42))
+        try:
+            # We pass a small sample for the background data (used for KernelExplainer / LinearExplainer)
+            explainer = get_shap_explainer(pipeline, df_aligned[model_features].sample(min(100, len(df_aligned)), random_state=42))
+        except Exception as e:
+            st.warning(f"SHAP Explainer Error: Could not initialize explainer. Details: {e}")
+            return
         
     if explainer is None:
-        st.warning("SHAP explanations are currently unavailable for this model type.")
+        st.warning("SHAP calculation failed: SHAP explanations are currently unavailable for this model type.")
         return
         
     # 1. Global Feature Importance (Portfolio Level)
     section_start("Global Feature Importance (Portfolio Level)")
     st.write("This chart shows which features have the greatest impact on credit risk predictions across the entire portfolio.")
     with st.spinner("Calculating global feature importance..."):
-        importance_df = generate_global_feature_importance(df, explainer, model_features)
-        if not importance_df.empty:
-            render_global_feature_importance(importance_df)
+        try:
+            importance_df = generate_global_feature_importance(df_aligned, explainer, model_features)
+            if importance_df is not None and not importance_df.empty:
+                render_global_feature_importance(importance_df)
+            else:
+                st.warning("Global feature importance is unavailable for the current dataset.")
+        except Exception as e:
+            st.warning(f"Visualization failed: Could not render global importance. Details: {e}")
     section_end()
     
     # 2. Customer Specific Explanation
@@ -518,31 +538,37 @@ def page_explainable_ai(df: pd.DataFrame):
         
     if selected_cid:
         if "customer_id" in df.columns:
-            customer_row = df[df["customer_id"].astype(str) == selected_cid].iloc[0]
+            customer_row = df_aligned[df_aligned["customer_id"].astype(str) == selected_cid].iloc[0]
         else:
-            customer_row = df.loc[int(selected_cid)]
+            customer_row = df_aligned.loc[int(selected_cid)]
             
         with st.spinner(f"Generating explanation for {selected_cid}..."):
-            explanation_data = generate_customer_explanation(customer_row, explainer, model_features)
-            
-            if explanation_data:
-                # Render NLP summary
-                render_customer_explanation(explanation_data)
+            try:
+                explanation_data = generate_customer_explanation(customer_row, explainer, model_features)
                 
-                # Render tabular breakdown
-                st.markdown("---")
-                breakdown_df = generate_prediction_breakdown(customer_row, explainer, model_features)
-                render_prediction_breakdown(breakdown_df)
-                
-                # Download options
-                st.markdown("---")
-                st.markdown("#### Export Explanation")
-                st.download_button(
-                    label="Download Feature Breakdown (CSV)",
-                    data=breakdown_df.to_csv(index=False).encode('utf-8'),
-                    file_name=f"shap_explanation_{selected_cid}.csv",
-                    mime="text/csv"
-                )
+                if explanation_data and explanation_data.get('contributions'):
+                    # Render NLP summary
+                    render_customer_explanation(explanation_data)
+                    
+                    # Render tabular breakdown
+                    st.markdown("---")
+                    breakdown_df = generate_prediction_breakdown(customer_row, explainer, model_features)
+                    if breakdown_df is not None and not breakdown_df.empty:
+                        render_prediction_breakdown(breakdown_df)
+                    
+                    # Download options
+                    st.markdown("---")
+                    st.markdown("#### Export Explanation")
+                    st.download_button(
+                        label="Download Feature Breakdown (CSV)",
+                        data=breakdown_df.to_csv(index=False).encode('utf-8'),
+                        file_name=f"shap_explanation_{selected_cid}.csv",
+                        mime="text/csv"
+                    )
+                else:
+                    st.warning("Explanation unavailable for the selected customer.")
+            except Exception as e:
+                st.warning(f"Customer explanation failed: {e}")
     section_end()
 
 
