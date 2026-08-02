@@ -13,33 +13,51 @@ from dashboard.streamlit.styles import PALETTE, CHART_COLORS, FONT_STACK
 _BASE_LAYOUT = dict(
     font=dict(family=FONT_STACK, color=PALETTE["navy"], size=13),
     paper_bgcolor="rgba(0,0,0,0)",   # transparent outer bg
-    plot_bgcolor="#FFFFFF",          # white plot area
-    margin=dict(l=16, r=16, t=44, b=16),
-    title_font=dict(family=FONT_STACK, size=16, color=PALETTE["navy"]),
+    plot_bgcolor="rgba(248,250,252,0.5)",  # very subtle tinted bg
+    margin=dict(l=20, r=20, t=52, b=20),
+    title_font=dict(family=FONT_STACK, size=17, color=PALETTE["navy"], weight=700),
     legend=dict(
-        bgcolor="rgba(0,0,0,0)",
+        bgcolor="rgba(255,255,255,0.9)",
         bordercolor=PALETTE["border"],
-        borderwidth=0,
-        font=dict(size=12),
+        borderwidth=1,
+        font=dict(size=12, family=FONT_STACK),
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1,
     ),
     xaxis=dict(
-        gridcolor="#EEF0F3",
+        gridcolor="#E2E8F0",
         gridwidth=1,
         linecolor=PALETTE["border"],
-        tickfont=dict(size=12, color=PALETTE["text_secondary"]),
-        title_font=dict(size=13, color=PALETTE["text_secondary"]),
+        linewidth=1,
+        tickfont=dict(size=12, color=PALETTE["text_secondary"], family=FONT_STACK),
+        title_font=dict(size=13, color=PALETTE["text_secondary"], family=FONT_STACK),
+        showgrid=True,
+        zeroline=False,
     ),
     yaxis=dict(
-        gridcolor="#EEF0F3",
+        gridcolor="#E2E8F0",
         gridwidth=1,
         linecolor=PALETTE["border"],
-        tickfont=dict(size=12, color=PALETTE["text_secondary"]),
-        title_font=dict(size=13, color=PALETTE["text_secondary"]),
+        linewidth=1,
+        tickfont=dict(size=12, color=PALETTE["text_secondary"], family=FONT_STACK),
+        title_font=dict(size=13, color=PALETTE["text_secondary"], family=FONT_STACK),
+        showgrid=True,
+        zeroline=False,
+    ),
+    hoverlabel=dict(
+        bgcolor=PALETTE["navy"],
+        font_size=13,
+        font_family=FONT_STACK,
+        font_color="#FFFFFF",
+        bordercolor=PALETTE["navy"],
     ),
 )
 
 
-def _apply_base(fig: go.Figure, height: int = 340) -> go.Figure:
+def _apply_base(fig: go.Figure, height: int = 360) -> go.Figure:
     fig.update_layout(height=height, **_BASE_LAYOUT)
     return fig
 
@@ -47,12 +65,15 @@ def _apply_base(fig: go.Figure, height: int = 340) -> go.Figure:
 def _empty_fig(msg: str = "No data available") -> go.Figure:
     fig = go.Figure()
     fig.add_annotation(
-        text=msg, showarrow=False, font=dict(size=14, color=PALETTE["text_secondary"]),
+        text=f"📊  {msg}",
+        showarrow=False,
+        font=dict(size=14, color=PALETTE["text_secondary"], family=FONT_STACK),
         xref="paper", yref="paper", x=0.5, y=0.5,
     )
     fig.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF",
-        xaxis_visible=False, yaxis_visible=False, height=200,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(248,250,252,0.5)",
+        xaxis_visible=False, yaxis_visible=False, height=240,
     )
     return fig
 
@@ -78,7 +99,11 @@ def plot_default_rate_bar(df, group_col: str, title: str, sort_by_value: bool = 
     )
     fig.update_traces(
         texttemplate="%{text:.1f}%", textposition="outside",
-        marker_line_width=0, marker_color=PALETTE["blue"],
+        marker_line_width=0,
+        marker_color=PALETTE["blue"],
+        marker=dict(cornerradius=6),
+        hoverlabel=dict(namelength=0),
+        hovertemplate="<b>%{x}</b><br>Default Rate: %{y:.1f}%<extra></extra>",
     )
     fig.update_layout(yaxis_title="Default Rate (%)", xaxis_title="")
     return _apply_base(fig)
@@ -105,7 +130,11 @@ def plot_count_bar(df, group_col: str, title: str, filter_defaulters: bool = Fal
     counts = df_plot.groupby(group_col).size().reset_index(name="Count")
     color = PALETTE["red"] if filter_defaulters else PALETTE["blue"]
     fig = px.bar(counts, x=group_col, y="Count", title=title, color_discrete_sequence=[color])
-    fig.update_traces(marker_line_width=0)
+    fig.update_traces(
+        marker_line_width=0,
+        marker=dict(cornerradius=6),
+        hovertemplate="<b>%{x}</b><br>Customers: %{y:,}<extra></extra>",
+    )
     fig.update_layout(xaxis_title="", yaxis_title="Customers")
     return _apply_base(fig)
 
@@ -192,7 +221,11 @@ def plot_monthly_trend(df, metric_prefix: str, title: str):
         color_discrete_map={"Defaulter": PALETTE["red"], "Reliable": PALETTE["blue"]},
         markers=True, title=title,
     )
-    fig.update_traces(line_width=2.5)
+    fig.update_traces(
+        line_width=2.5,
+        marker=dict(size=8, line=dict(width=2, color="white")),
+        hovertemplate="<b>%{x}</b><br>Amount: NT$ %{y:,.0f}<extra></extra>",
+    )
     return _apply_base(fig)
 
 

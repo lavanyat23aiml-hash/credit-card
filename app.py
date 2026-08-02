@@ -38,6 +38,7 @@ from dashboard.streamlit.styles import (
     render_fraud_status_card,
     render_review_recommendation,
     render_indicator_badge,
+    render_user_profile_sidebar,
 )
 from dashboard.streamlit.data_loader import (
     load_cleaned_data,
@@ -131,6 +132,10 @@ def build_sidebar(df: pd.DataFrame):
     render_sidebar_brand()
     
     role = get_current_role()
+    username = st.session_state.get("username", "")
+    if username:
+        render_user_profile_sidebar(username, role)
+    
     if role == "Admin":
         available_pages = PAGES
     else:
@@ -151,8 +156,9 @@ def build_sidebar(df: pd.DataFrame):
     filtered = df.copy()
     if selection not in [PAGE_PREDICT, PAGE_DOCS, PAGE_PERFORMANCE, PAGE_FRAUD]:
         st.sidebar.markdown(
-            f'<div style="font-size:13px; font-weight:600; color:{PALETTE["navy"]}; '
-            f'margin-bottom:6px;">FILTERS</div>',
+            f'<div style="font-size:12px; font-weight:700; color:{PALETTE["text_secondary"]}; '
+            f'text-transform:uppercase; letter-spacing:0.08em; '
+            f'margin-bottom:12px;">FILTERS</div>',
             unsafe_allow_html=True,
         )
         age_opts    = ["All"] + sorted(df["age_group"].dropna().unique().tolist())
@@ -168,7 +174,7 @@ def build_sidebar(df: pd.DataFrame):
         st.sidebar.selectbox("Education",           edu_opts,    key="f_edu")
         st.sidebar.selectbox("Marriage",            mar_opts,    key="f_mar")
         st.sidebar.selectbox("Payment Delay",       delay_opts,  key="f_delay")
-        st.sidebar.button("? Reset Filters", on_click=_reset_filters)
+        st.sidebar.button("↺ Reset Filters", on_click=_reset_filters)
 
         if st.session_state["f_age"]   != "All": filtered = filtered[filtered["age_group"]          == st.session_state["f_age"]]
         if st.session_state["f_credit"]!= "All": filtered = filtered[filtered["credit_limit_group"] == st.session_state["f_credit"]]
@@ -178,21 +184,35 @@ def build_sidebar(df: pd.DataFrame):
         if st.session_state["f_delay"] != "All":
             filtered = filtered[filtered["delay_status"] == st.session_state["f_delay"]]
 
-    render_sidebar_footer()
-    
+    st.sidebar.markdown("---")
     # Data source badge
     if st.session_state.get('use_uploaded_data'):
         render_data_source_badge(st.session_state.get('uploaded_filename'))
     else:
         render_data_source_badge()
-        
+
+    render_sidebar_footer()
     logout_button()
     return selection, filtered
 
 
 # --- Helper ------------------------------------------------------------------
 def _warn_empty():
-    st.warning("⚠️ No customers match the current filters. Please adjust or reset the sidebar filters.")
+    st.markdown(
+        f"""<div style="
+            background: {PALETTE['soft_orange']};
+            border: 1px solid {PALETTE['orange']}33;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+        ">
+            <div style="font-size:48px; margin-bottom:16px;">🔍</div>
+            <div style="font-size:22px; font-weight:700; color:{PALETTE['navy']}; margin-bottom:8px;">No Customers Match</div>
+            <div style="font-size:15px; color:{PALETTE['text_secondary']}; font-weight:500;">The current filter combination returned no results. Please adjust or reset the sidebar filters to continue.</div>
+        </div>""",
+        unsafe_allow_html=True
+    )
 
 def get_active_dataset(default_df):
     if st.session_state.get("use_uploaded_data") and st.session_state.get("uploaded_df") is not None:
@@ -227,25 +247,6 @@ def page_overview(df: pd.DataFrame):
             st.plotly_chart(fig, width="stretch")
             section_end()
         return
-
-
-    if not has_target_column(df):
-        st.info("The uploaded file does not contain actual default labels. Supervised performance and default-rate analytics are unavailable.")
-        c1, c2 = st.columns(2)
-        with c1:
-            section_start("Customer Count by Age Group")
-            st.plotly_chart(plot_count_bar(df, "age_group", ""), width="stretch")
-            section_end()
-        return
-
-
-    if not has_target_column(df):
-        st.info("The uploaded file does not contain actual default labels. Supervised performance and default-rate analytics are unavailable.")
-        # Render a simple KPI for just total customers
-        k1, _ = st.columns([1, 5])
-        with k1: render_kpi_card("Total Customers", f"{len(df):,}", PALETTE["blue"], PALETTE["soft_blue"], "Portfolio size", "👥")
-        return
-
 
     total_cust  = len(df)
     total_def   = int(df["default_payment_next_month"].sum())
@@ -878,9 +879,21 @@ def page_upload():
         "Upload customer credit data and verify compatibility before analysis.",
     )
 
-    st.info(
-        "Uploaded data is processed temporarily within this session "
-        "and is not stored by CreditGuard."
+    st.markdown(
+        f"""<div style="
+            background: {PALETTE['soft_blue']};
+            border: 1px solid {PALETTE['blue']}33;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: {PALETTE['navy']};
+            display: flex; align-items: center; gap: 12px;
+        ">
+            <span style="font-size:20px;">🔒</span>
+            <span>Uploaded data is processed <strong>temporarily within this session</strong> and is never stored by CreditGuard.</span>
+        </div>""",
+        unsafe_allow_html=True,
     )
 
     uploaded_file = st.file_uploader(
@@ -889,7 +902,19 @@ def page_upload():
     )
 
     if uploaded_file is None:
-        st.warning("Upload a CSV or XLSX file to begin validation.")
+        st.markdown(
+            f"""<div style="
+                background: {PALETTE['bg_secondary']};
+                border: 2px dashed {PALETTE['border']};
+                border-radius: 16px; padding: 48px;
+                text-align: center; margin: 20px 0;
+            ">
+                <div style="font-size:48px; margin-bottom:16px;">📤</div>
+                <div style="font-size:18px; font-weight:700; color:{PALETTE['navy']}; margin-bottom:8px;">No file selected</div>
+                <div style="font-size:14px; color:{PALETTE['text_secondary']};">Use the uploader above to load a <strong>CSV</strong> or <strong>XLSX</strong> file to begin validation.</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
         return
 
     if uploaded_file.size == 0:
@@ -1145,9 +1170,14 @@ def page_fraud(df: pd.DataFrame):
             color=level_counts.index,
             color_discrete_map={"Low": PALETTE["green"], "Moderate": PALETTE["orange"], "High": PALETTE["red"]},
             labels={"x": "Risk Level", "y": "Customers"},
-            title="Risk Level Distribution",
         )
-        fig.update_layout(showlegend=False, template="plotly_white")
+        fig.update_layout(
+            showlegend=False, template="plotly_white",
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_family="Inter, sans-serif",
+            margin=dict(l=8, r=8, t=8, b=8),
+        )
+        fig.update_traces(marker_line_width=0)
         st.plotly_chart(fig, use_container_width=True)
 
     with ch2:
@@ -1155,9 +1185,13 @@ def page_fraud(df: pd.DataFrame):
             result, x="fraud_risk_score", nbins=15,
             color_discrete_sequence=[PALETTE["blue"]],
             labels={"fraud_risk_score": "Fraud-Risk Score", "count": "Customers"},
-            title="Score Distribution",
         )
-        fig2.update_layout(template="plotly_white")
+        fig2.update_layout(
+            template="plotly_white",
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_family="Inter, sans-serif",
+            margin=dict(l=8, r=8, t=8, b=8),
+        )
         st.plotly_chart(fig2, use_container_width=True)
     section_end()
 

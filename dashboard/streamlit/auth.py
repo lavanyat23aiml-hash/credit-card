@@ -106,21 +106,38 @@ def get_current_role():
 
 def login_form():
     """Renders the login page."""
+    # Full-page gradient background
+    st.markdown(
+        """
+        <style>
+        [data-testid="stApp"] {
+            background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 50%, #F0FDFA 100%) !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2:
         st.markdown("<br><br>", unsafe_allow_html=True)
         render_login_header()
         
         with st.form("login_form"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submit = st.form_submit_button("Login")
+            st.markdown("""
+            <div style="font-size:14px; font-weight:700; color:#64748B; text-transform:uppercase;
+                        letter-spacing:0.05em; margin-bottom:20px; text-align:center;">Sign In to Your Account</div>
+            """, unsafe_allow_html=True)
+            username = st.text_input("Username", placeholder="Enter your username")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
+            submit = st.form_submit_button("Sign In →", use_container_width=True, type="primary")
             
             if submit:
                 if not username or not password:
-                    st.error("Please enter both username and password.")
+                    st.error("🚫 Please enter both username and password.")
                 else:
-                    success, result = authenticate_user(username, password)
+                    with st.spinner("Authenticating..."):
+                        success, result = authenticate_user(username, password)
                     if success:
                         st.session_state["authenticated"] = True
                         st.session_state["username"] = username
@@ -130,18 +147,13 @@ def login_form():
                         st.rerun()
                     else:
                         log_audit_event(username, "Unknown", "LOGIN", "System", "Session", "FAILED", result)
-                        st.error(result)
+                        st.error(f"🚫 {result}")
         
         render_login_footer()
 
 def logout_button():
-    """Renders a logout button and current user info in the sidebar."""
-    name = get_current_user()
-    role = get_current_role()
-    
-    render_user_profile_sidebar(name, role)
-    
-    if st.sidebar.button("Logout", use_container_width=True):
+    """Renders a logout button in the sidebar."""
+    if st.sidebar.button("🚪 Sign Out", use_container_width=True):
         if st.session_state.get("username"):
             log_audit_event(st.session_state["username"], st.session_state["user_role"], "LOGOUT", "System", "Session", "SUCCESS", "User logged out")
             

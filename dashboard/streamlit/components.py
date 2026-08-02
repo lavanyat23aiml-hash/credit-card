@@ -27,10 +27,25 @@ def mask_customer_id(customer_id):
 
 def render_disclaimer():
     """Renders the standard educational disclaimer."""
-    st.info(
-        "**Educational Disclaimer:** This application is built for educational and portfolio "
-        "demonstration purposes only. It is not connected to a real financial institution, "
-        "and predictions must not be used for actual lending decisions."
+    st.markdown(
+        f"""<div style="
+            background: {PALETTE['soft_orange']};
+            border: 1px solid {PALETTE['orange']}33;
+            border-left: 4px solid {PALETTE['orange']};
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        ">
+            <div style="font-size:20px;">⚠️</div>
+            <div>
+                <div style="font-weight:700; color:{PALETTE['navy']}; margin-bottom:4px; font-size:15px;">Educational Disclaimer</div>
+                <div style="font-size:14px; color:{PALETTE['text_secondary']}; line-height:1.6;">This application is built for educational and portfolio demonstration purposes only. It is not connected to a real financial institution, and predictions must not be used for actual lending decisions.</div>
+            </div>
+        </div>""",
+        unsafe_allow_html=True
     )
 
 
@@ -164,56 +179,75 @@ def render_validation_summary(report: dict, rows: int, cols: int):
     
     status_details = {
         "pass": {
-            "title": "✅ Dataset Validated Successfully",
+            "title": "Dataset Validated Successfully",
             "bg": PALETTE["soft_green"],
             "color": PALETTE["green"],
-            "text": "Your dataset meets the core requirements for prediction and analytics."
+            "text": "Your dataset meets the core requirements for prediction and analytics.",
+            "icon": "✅",
         },
         "warning": {
-            "title": "⚠️ Dataset Validated with Quality Issues",
+            "title": "Validated with Quality Issues",
             "bg": PALETTE["soft_orange"],
             "color": PALETTE["orange"],
-            "text": "The dataset is usable, but some specific analytical features may be unavailable due to missing or low-quality data."
+            "text": "The dataset is usable, but some analytical features may be unavailable.",
+            "icon": "⚠️",
         },
         "error": {
-            "title": "❌ Dataset Rejected — Critical Issues Found",
+            "title": "Dataset Rejected — Critical Issues",
             "bg": PALETTE["soft_red"],
             "color": PALETTE["red"],
-            "text": "This dataset cannot be processed. Please resolve the critical errors below and upload a valid file."
-        }
+            "text": "This dataset cannot be processed. Please resolve the errors below.",
+            "icon": "❌",
+        },
     }
     
     sd = status_details.get(status, status_details["error"])
     
-    # Render Status Card
+    # Premium status banner
     st.markdown(f"""
     <div style="
         background: {sd['bg']};
-        border: 1px solid {sd['color']};
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        color: {PALETTE['navy']};
+        border: 1px solid {sd['color']}40;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
     ">
-        <div style="font-size: 18px; font-weight: 700; color: {sd['color']}; margin-bottom: 4px;">{sd['title']}</div>
-        <div style="font-size: 14px; font-weight: 500;">{sd['text']}</div>
+        <div style="
+            background: {sd['color']}1A;
+            color: {sd['color']};
+            width: 56px; height: 56px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        ">{sd['icon']}</div>
+        <div>
+            <div style="font-size: 20px; font-weight: 800; color: {PALETTE['navy']}; margin-bottom: 4px; letter-spacing:-0.01em;">{sd['title']}</div>
+            <div style="font-size: 14px; color: {PALETTE['text_secondary']}; font-weight: 500;">{sd['text']}</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Dataset Metadata metrics
+    # Dataset metadata metrics
     m1, m2, m3, m4 = st.columns(4)
+    from dashboard.streamlit.styles import render_kpi_card
     with m1:
-        st.metric("Total Rows", f"{rows:,}")
+        render_kpi_card("Total Rows", f"{rows:,}", PALETTE["blue"], PALETTE["soft_blue"], "Uploaded records", "📋")
     with m2:
-        st.metric("Total Columns", f"{cols:,}")
+        render_kpi_card("Total Columns", f"{cols:,}", PALETTE["teal"], PALETTE["soft_teal"], "Features detected", "📊")
     with m3:
-        st.metric("Data Quality Score", f"{score}/100")
+        score_color = PALETTE["green"] if score >= 80 else PALETTE["orange"] if score >= 60 else PALETTE["red"]
+        score_bg = PALETTE["soft_green"] if score >= 80 else PALETTE["soft_orange"] if score >= 60 else PALETTE["soft_red"]
+        render_kpi_card("Quality Score", f"{score}/100", score_color, score_bg, "Data quality rating", "⭐")
     with m4:
-        st.metric("Validation Status", status.upper())
+        render_kpi_card("Status", status.upper(), sd['color'], sd['bg'], "Validation result", sd['icon'])
 
     critical_missing = report.get("critical_missing_columns", [])
     optional_missing = report.get("optional_missing_columns", [])
-    warnings = report.get("warnings", [])
+    warnings_list = report.get("warnings", [])
     errors = report.get("errors", [])
     deductions = report.get("deductions", [])
 
@@ -233,9 +267,9 @@ def render_validation_summary(report: dict, rows: int, cols: int):
             for err in errors:
                 st.markdown(f"- ❌ {err}")
 
-    if warnings:
+    if warnings_list:
         with st.expander("⚠️ Quality Warnings", expanded=True):
-            for warn in warnings:
+            for warn in warnings_list:
                 st.markdown(f"- ⚠️ {warn}")
 
     if deductions:
@@ -248,25 +282,39 @@ def render_validation_summary(report: dict, rows: int, cols: int):
 
 def render_customer_risk_summary(profile_row):
     """Displays the unified risk profile summary for a single customer."""
+    from dashboard.streamlit.styles import render_kpi_card
     c_id = mask_customer_id(profile_row.get('customer_id', 'Unknown'))
-    st.markdown(f"### Customer ID: {c_id}")
     
     score = profile_row.get('overall_risk_score', 0)
     level = profile_row.get('risk_level', 'Unknown')
     conf = profile_row.get('confidence_level', 'Unknown')
     
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Overall Risk Score", f"{score}/100")
-    with c2:
-        st.markdown("**Risk Level**")
-        st.markdown(render_risk_level_badge(level), unsafe_allow_html=True)
-    with c3:
-        conf_color = "green" if conf == "High" else "orange" if conf == "Medium" else "red"
-        st.markdown("**Confidence Level**")
-        st.markdown(f"<span style='color:{PALETTE[conf_color]}; font-weight:bold;'>{conf}</span>", unsafe_allow_html=True)
-        
-    st.markdown("#### Key Risk Reasons")
+    # Header banner
+    level_colors = {'High': PALETTE['red'], 'Moderate': PALETTE['orange'], 'Low': PALETTE['green']}
+    level_bgs = {'High': PALETTE['soft_red'], 'Moderate': PALETTE['soft_orange'], 'Low': PALETTE['soft_green']}
+    lc = level_colors.get(level, PALETTE['blue'])
+    lb = level_bgs.get(level, PALETTE['soft_blue'])
+    
+    st.markdown(f"""
+    <div style="background:{lb}; border:1px solid {lc}40; border-radius:16px; padding:20px 24px; margin-bottom:20px;
+                display:flex; align-items:center; gap:20px;">
+        <div style="background:{lc}1A; color:{lc}; width:48px; height:48px; border-radius:12px;
+                    display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800;">
+            {str(int(score))}
+        </div>
+        <div>
+            <div style="font-size:13px; color:{PALETTE['text_secondary']}; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Customer {c_id}</div>
+            <div style="font-size:22px; font-weight:800; color:{lc}; letter-spacing:-0.01em;">{level} Risk</div>
+        </div>
+        <div style="margin-left:auto; text-align:right;">
+            <div style="font-size:13px; color:{PALETTE['text_secondary']}; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Confidence</div>
+            <div style="font-size:18px; font-weight:700; color:{PALETTE['navy']};">{conf}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown(f"""<div style="font-size:18px; font-weight:700; color:{PALETTE['navy']}; margin-bottom:12px; letter-spacing:-0.01em;">Key Risk Reasons</div>""",
+                unsafe_allow_html=True)
     reasons = profile_row.get('risk_reasons', [])
     if isinstance(reasons, list) and reasons:
         for r in reasons:
@@ -386,15 +434,22 @@ def render_global_feature_importance(importance_df: pd.DataFrame):
         x="Importance",
         y="Feature",
         orientation="h",
-        title="Top 10 Most Influential Features (Global Average)",
-        labels={"Importance": "Mean Absolute SHAP Value", "Feature": ""},
-        color_discrete_sequence=[PALETTE["blue"]]
+        title="Top 10 Most Influential Features (Global SHAP)",
+        labels={"Importance": "Mean |SHAP Value|", "Feature": ""},
+        color="Importance",
+        color_continuous_scale=[[0, PALETTE["soft_blue"]], [0.5, PALETTE["blue"]], [1.0, PALETTE["navy"]]],
+    )
+    fig.update_traces(
+        marker=dict(cornerradius=6),
+        hovertemplate="<b>%{y}</b><br>Importance: %{x:.4f}<extra></extra>",
     )
     fig.update_layout(
-        margin=dict(l=10, r=10, t=40, b=10),
+        margin=dict(l=10, r=10, t=50, b=10),
         font_family=FONT_STACK,
         plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)"
+        paper_bgcolor="rgba(0,0,0,0)",
+        coloraxis_showscale=False,
+        height=380,
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -442,22 +497,31 @@ def render_customer_explanation(explanation_data: dict):
         st.warning("Explanation could not be generated for this customer.")
         return
         
-    st.markdown("#### AI Risk Explanation")
+    st.markdown(f"""<div style="font-size:18px; font-weight:700; color:{PALETTE['navy']}; margin-bottom:12px; letter-spacing:-0.01em;">🤖 AI-Generated Risk Explanation</div>""",
+                unsafe_allow_html=True)
     st.markdown(render_xai_explanation_panel(explanation_data.get('nl_explanation', '')), unsafe_allow_html=True)
     
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("**Top Factors Increasing Risk**")
+        st.markdown(f"""
+        <div style="background:{PALETTE['soft_red']}; border:1px solid {PALETTE['red']}40; border-radius:12px; padding:16px 20px;">
+            <div style="font-size:13px; font-weight:700; color:{PALETTE['red']}; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">↑ Top Factors Increasing Risk</div>
+        """, unsafe_allow_html=True)
         if explanation_data.get('top_positive'):
             for p in explanation_data['top_positive']:
-                st.markdown(f"🔴 **{p['Feature'].replace('_', ' ').title()}** (+{p['Contribution']:.3f})")
+                st.markdown(f"**{p['Feature'].replace('_', ' ').title()}** &nbsp; `+{p['Contribution']:.3f}`")
         else:
             st.markdown("*None identified*")
+        st.markdown("</div>", unsafe_allow_html=True)
             
     with c2:
-        st.markdown("**Top Factors Decreasing Risk**")
+        st.markdown(f"""
+        <div style="background:{PALETTE['soft_green']}; border:1px solid {PALETTE['green']}40; border-radius:12px; padding:16px 20px;">
+            <div style="font-size:13px; font-weight:700; color:{PALETTE['green']}; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">↓ Top Factors Decreasing Risk</div>
+        """, unsafe_allow_html=True)
         if explanation_data.get('top_negative'):
             for n in explanation_data['top_negative']:
-                st.markdown(f"🟢 **{n['Feature'].replace('_', ' ').title()}** ({n['Contribution']:.3f})")
+                st.markdown(f"**{n['Feature'].replace('_', ' ').title()}** &nbsp; `{n['Contribution']:.3f}`")
         else:
             st.markdown("*None identified*")
+        st.markdown("</div>", unsafe_allow_html=True)
